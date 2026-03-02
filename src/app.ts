@@ -8,6 +8,7 @@ import healthRoutes from "./routes/health.routes.ts";
 import productRoutes from "./routes/product.routes.ts";
 import customerRoutes from "./routes/customer.routes.ts";
 import invoiceRoutes from "./routes/invoice.routes.ts";
+import summaryRoutes from "./routes/summary.routes.ts";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.ts";
 import { requireAdmin } from "./middlewares/auth.middleware.ts";
 
@@ -23,6 +24,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", requireAdmin, productRoutes);
 app.use("/api/v1/customers", requireAdmin, customerRoutes);
 app.use("/api/v1/invoices", requireAdmin, invoiceRoutes);
+app.use("/api/v1/summary", requireAdmin, summaryRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

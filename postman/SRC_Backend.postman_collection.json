@@ -556,6 +556,34 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Summary",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Receivables Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/summary/receivables",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "summary", "receivables"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
