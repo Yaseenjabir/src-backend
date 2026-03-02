@@ -25,6 +25,12 @@ This design ignores hosting/deployment and focuses on functionality.
 
 Base path: `/api/v1`
 
+### Auth
+- `POST /auth/login` (admin login, returns JWT token)
+- `GET /auth/me` (current admin profile)
+
+> Route protection: all business routes are admin-protected (`products`, `customers`, and upcoming `invoices`/`payments`/`summary`).
+
 ### Products
 - `GET /products` (list + search + pagination + filter by category)
 - `GET /products/categories` (returns enum list for frontend dropdown)
@@ -84,6 +90,29 @@ Base path: `/api/v1`
 }
 ```
 
+### Admin Login Request
+```json
+{
+  "email": "admin@example.com",
+  "password": "change_this_password"
+}
+```
+
+### Admin Login Response (example)
+```json
+{
+  "token": "<jwt>",
+  "token_type": "Bearer",
+  "expires_in": "7d",
+  "user": {
+    "id": "ObjectId",
+    "name": "Admin",
+    "email": "admin@example.com",
+    "role": "admin"
+  }
+}
+```
+
 ### Add Payment Request
 ```json
 {
@@ -118,39 +147,61 @@ Base path: `/api/v1`
 - `customers.phone`
 
 ## 7) Security (minimal v1)
-- JWT auth for admin/staff users.
+- Custom JWT auth with single role: `admin`.
+- All business APIs require `Authorization: Bearer <token>`.
+- Bootstrap admin user is auto-created on startup (if missing) using env values:
+  - `ADMIN_NAME`
+  - `ADMIN_EMAIL`
+  - `ADMIN_PASSWORD`
+- Required JWT env values:
+  - `JWT_SECRET`
+  - optional: `JWT_EXPIRES_IN` (default `7d`)
 - Audit fields (`created_at`, `updated_at`) mandatory.
 
 ## 8) Suggested Folder Structure
 
 ```text
 backend/
+  .env.example
+  postman/
+    SRC_Backend.postman_collection.json
+    SRC_Local.postman_environment.json
   src/
-    modules/
-      products/
-      customers/
-      invoices/
-      payments/
-      summary/
-    shared/
-      db/
-      middleware/
-      utils/
-      validators/
     app.ts
     server.ts
-  src/models/
-    Product.ts
-    Customer.ts
-    Invoice.ts
-    Payment.ts
-  tests/
+    config/
+      db.ts
+      bootstrapAdmin.ts
+    constants/
+      productCategories.ts
+      invoiceStatus.ts
+    controllers/
+      auth.controller.ts
+      product.controller.ts
+      customer.controller.ts
+    middlewares/
+      auth.middleware.ts
+      errorHandler.ts
+    models/
+      User.ts
+      Product.ts
+      Customer.ts
+      Invoice.ts
+      Payment.ts
+    routes/
+      auth.routes.ts
+      health.routes.ts
+      product.routes.ts
+      customer.routes.ts
+    utils/
+      AppError.ts
+      asyncHandler.ts
 ```
 
 ## 9) Milestone Plan
-1. DB schema + migrations
-2. Products + Customers CRUD
-3. Invoice create/read/update (with items)
-4. Payments and status/remaining auto-update
-5. Summary endpoint
-6. Validation, tests, and API docs
+1. ✅ Core setup: TypeScript + MongoDB + global error handling
+2. ✅ Auth: admin login, protected routes, bootstrap admin
+3. ✅ Products + Customers CRUD (in progress scope)
+4. ⏳ Invoice create/read/update (with item snapshots)
+5. ⏳ Payments and status/remaining auto-update
+6. ⏳ Summary endpoint + tests + API docs

@@ -12,14 +12,33 @@
 
 Server runs on `http://localhost:5000` by default.
 
+## Authentication
+
+- The backend uses custom JWT auth.
+- A bootstrap admin user is auto-created on startup if these env vars are set:
+   - `ADMIN_NAME`
+   - `ADMIN_EMAIL`
+   - `ADMIN_PASSWORD`
+- Login endpoint:
+   - `POST /api/v1/auth/login`
+- Use returned bearer token for admin-protected routes.
+
 ## Current endpoints
 
 - `GET /api/v1/health`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me`
 - `GET /api/v1/products/categories`
 - `GET /api/v1/products`
 - `POST /api/v1/products`
+- `GET /api/v1/customers`
+- `POST /api/v1/customers`
+- `GET /api/v1/customers/:id`
+- `PATCH /api/v1/customers/:id`
+- `DELETE /api/v1/customers/:id`
   
 ## Notes
 
 - Money fields are integer-only (for example: `300`, not `300.00`).
 - Product `category` uses enum values from `src/constants/productCategories.ts`.
+- `products` and `customers` routes are admin-protected.

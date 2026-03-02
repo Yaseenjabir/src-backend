@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import type { Server } from "http";
 import app from "./app.ts";
+import { bootstrapAdminUser } from "./config/bootstrapAdmin.ts";
 import { connectDB } from "./config/db.ts";
 
 dotenv.config();
@@ -67,6 +68,7 @@ process.on("uncaughtException", (error: Error) => {
 (async () => {
   try {
     await connectDB();
+    await bootstrapAdminUser();
     server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
