@@ -73,6 +73,33 @@ async function getInvoicePaidAmount(invoiceId: string): Promise<number> {
   return result[0]?.total ?? 0;
 }
 
+async function recalculateInvoicePaymentState(invoiceId: string) {
+  const invoice = await Invoice.findById(invoiceId);
+  if (!invoice) {
+    throw new AppError(404, "NOT_FOUND", "Invoice not found");
+  }
+
+  const paidAmount = await getInvoicePaidAmount(invoiceId);
+  const remainingAmount = Math.max(invoice.total_amount - paidAmount, 0);
+  const status = deriveStatus(invoice.total_amount, paidAmount);
+
+  const updatedInvoice = await Invoice.findByIdAndUpdate(
+    invoiceId,
+    {
+      paid_amount: paidAmount,
+      remaining_amount: remainingAmount,
+      status,
+    },
+    { new: true },
+  );
+
+  if (!updatedInvoice) {
+    throw new AppError(404, "NOT_FOUND", "Invoice not found");
+  }
+
+  return updatedInvoice;
+}
+
 async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
   if (!Array.isArray(itemsInput) || itemsInput.length === 0) {
     throw new AppError(400, "BAD_REQUEST", "items must be a non-empty array");
@@ -376,4 +403,86 @@ export async function updateInvoice(req: Request, res: Response) {
   }
 
   return res.json(updatedInvoice);
+}
+
+export async function addInvoicePayment(req: Request, res: Response) {
+  const { id } = req.params;
+  assertValidObjectId(id, "invoice id");
+
+  const invoice = await Invoice.findById(id);
+  if (!invoice) {
+    throw new AppError(404, "NOT_FOUND", "Invoice not found");
+  }
+
+  const {
+    paymentDate,
+    amount,
+    method = "CASH",
+    reference,
+    notes,
+  } = req.body as {
+    paymentDate?: string;
+    amount?: number;
+    method?: "CASH" | "BANK" | "OTHER";
+    reference?: string;
+    notes?: string;
+  };
+
+  const parsedDate = parseDate(paymentDate, "paymentDate");
+  const parsedAmount = assertInteger(amount, "amount");
+
+  if (parsedAmount <= 0) {
+    throw new AppError(422, "UNPROCESSABLE_ENTITY", "amount must be > 0");
+  }
+
+  const payment = await Payment.create({
+    invoice_id: invoice._id,
+    payment_date: parsedDate,
+    amount: parsedAmount,
+    method,
+    reference,
+    notes,
+  });
+
+  const updatedInvoice = await recalculateInvoicePaymentState(id);
+
+  return res.status(201).json({ payment, invoice: updatedInvoice });
+}
+
+export async function listInvoicePayments(req: Request, res: Response) {
+  const { id } = req.params;
+  assertValidObjectId(id, "invoice id");
+
+  const invoice = await Invoice.findById(id).select(
+    "_id invoice_no total_amount paid_amount remaining_amount status",
+  );
+  if (!invoice) {
+    throw new AppError(404, "NOT_FOUND", "Invoice not found");
+  }
+
+  const payments = await Payment.find({ invoice_id: id }).sort({
+    payment_date: -1,
+    created_at: -1,
+  });
+
+  return res.json({ invoice, payments });
+}
+
+export async function deletePayment(req: Request, res: Response) {
+  const { paymentId } = req.params;
+  assertValidObjectId(paymentId, "payment id");
+
+  const payment = await Payment.findById(paymentId);
+  if (!payment) {
+    throw new AppError(404, "NOT_FOUND", "Payment not found");
+  }
+
+  const invoiceId = payment.invoice_id.toString();
+  await Payment.findByIdAndDelete(paymentId);
+  const updatedInvoice = await recalculateInvoicePaymentState(invoiceId);
+
+  return res.json({
+    message: "Payment deleted successfully",
+    invoice: updatedInvoice,
+  });
 }
