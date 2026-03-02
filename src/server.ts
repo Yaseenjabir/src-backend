@@ -10,13 +10,17 @@ const PORT = Number(process.env.PORT) || 5000;
 let server: Server | null = null;
 let isShuttingDown = false;
 
-async function gracefulShutdown(signal: string): Promise<void> {
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
+async function gracefulShutdown(reason: string, exitCode = 0): Promise<void> {
   if (isShuttingDown) {
     return;
   }
 
   isShuttingDown = true;
-  console.log(`${signal} received. Starting graceful shutdown...`);
+  console.log(`${reason} received. Starting graceful shutdown...`);
 
   try {
     if (server) {
@@ -34,10 +38,9 @@ async function gracefulShutdown(signal: string): Promise<void> {
 
     await mongoose.disconnect();
     console.log("MongoDB disconnected");
-    process.exit(0);
+    process.exit(exitCode);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown shutdown error";
+    const message = getErrorMessage(error);
     console.error("Graceful shutdown failed:", message);
     process.exit(1);
   }
@@ -51,6 +54,16 @@ process.on("SIGTERM", () => {
   void gracefulShutdown("SIGTERM");
 });
 
+process.on("unhandledRejection", (reason: unknown) => {
+  console.error("Unhandled promise rejection:", getErrorMessage(reason));
+  void gracefulShutdown("unhandledRejection", 1);
+});
+
+process.on("uncaughtException", (error: Error) => {
+  console.error("Uncaught exception:", getErrorMessage(error));
+  void gracefulShutdown("uncaughtException", 1);
+});
+
 (async () => {
   try {
     await connectDB();
@@ -58,8 +71,7 @@ process.on("SIGTERM", () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown startup error";
+    const message = getErrorMessage(error);
     console.error("Failed to start server:", message);
     process.exit(1);
   }
