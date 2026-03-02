@@ -36,6 +36,10 @@ Server runs on `http://localhost:5000` by default.
 - `GET /api/v1/customers/:id`
 - `PATCH /api/v1/customers/:id`
 - `DELETE /api/v1/customers/:id`
+- `GET /api/v1/invoices`
+- `POST /api/v1/invoices`
+- `GET /api/v1/invoices/:id`
+- `PATCH /api/v1/invoices/:id`
   
 ## Notes
 
