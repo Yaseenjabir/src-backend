@@ -39,7 +39,6 @@ const productSchema = new mongoose.Schema(
   },
 );
 
-productSchema.index({ sku: 1 }, { unique: true });
 productSchema.index({ category: 1 });
 productSchema.index({ category: 1, name: 1 });
 

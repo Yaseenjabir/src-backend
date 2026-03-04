@@ -84,7 +84,6 @@ const invoiceSchema = new mongoose.Schema(
   },
 );
 
-invoiceSchema.index({ invoice_no: 1 }, { unique: true });
 invoiceSchema.index({ customer_id: 1, status: 1 });
 invoiceSchema.index({ invoice_date: -1 });
 
