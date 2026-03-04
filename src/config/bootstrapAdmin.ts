@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import User from "../models/User.ts";
+import User from "../models/User.js";
 
 export async function bootstrapAdminUser(): Promise<void> {
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();

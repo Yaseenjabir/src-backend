@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
-import Customer from "../models/Customer.ts";
-import { AppError } from "../utils/AppError.ts";
+import Customer from "../models/Customer.js";
+import { AppError } from "../utils/AppError.js";
 
 function assertValidObjectId(id: string): void {
   if (!mongoose.isValidObjectId(id)) {

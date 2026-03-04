@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import type { Server } from "http";
-import app from "./app.ts";
-import { bootstrapAdminUser } from "./config/bootstrapAdmin.ts";
-import { connectDB } from "./config/db.ts";
+import app from "./app.js";
+import { bootstrapAdminUser } from "./config/bootstrapAdmin.js";
+import { connectDB } from "./config/db.js";
 
 dotenv.config();
 

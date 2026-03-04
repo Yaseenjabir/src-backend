@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { INVOICE_STATUS } from "../constants/invoiceStatus.ts";
+import { INVOICE_STATUS } from "../constants/invoiceStatus.js";
 
 const invoiceItemSchema = new mongoose.Schema(
   {

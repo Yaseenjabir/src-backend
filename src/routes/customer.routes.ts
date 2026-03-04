@@ -5,15 +5,15 @@ import {
   getCustomerById,
   listCustomers,
   updateCustomer,
-} from "../controllers/customer.controller.ts";
-import { validateRequest } from "../middlewares/validateRequest.ts";
-import { asyncHandler } from "../utils/asyncHandler.ts";
+} from "../controllers/customer.controller.js";
+import { validateRequest } from "../middlewares/validateRequest.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   createCustomerBodySchema,
   customerIdParamsSchema,
   listCustomersQuerySchema,
   updateCustomerBodySchema,
-} from "../validators/customer.validator.ts";
+} from "../validators/customer.validator.js";
 
 const router = Router();
 

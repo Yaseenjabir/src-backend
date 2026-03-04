@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getMe, login } from "../controllers/auth.controller.ts";
-import { requireAdmin } from "../middlewares/auth.middleware.ts";
-import { validateRequest } from "../middlewares/validateRequest.ts";
-import { asyncHandler } from "../utils/asyncHandler.ts";
-import { loginBodySchema } from "../validators/auth.validator.ts";
+import { getMe, login } from "../controllers/auth.controller.js";
+import { requireAdmin } from "../middlewares/auth.middleware.js";
+import { validateRequest } from "../middlewares/validateRequest.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { loginBodySchema } from "../validators/auth.validator.js";
 
 const router = Router();
 

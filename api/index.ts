@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import app from "../src/app.ts";
-import { connectDB } from "../src/config/db.ts";
-import { bootstrapAdminUser } from "../src/config/bootstrapAdmin.ts";
+import app from "../src/app.js";
+import { connectDB } from "../src/config/db.js";
+import { bootstrapAdminUser } from "../src/config/bootstrapAdmin.js";
 
 let initPromise: Promise<void> | null = null;
 

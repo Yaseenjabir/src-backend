@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRODUCT_CATEGORIES } from "../constants/productCategories.ts";
+import { PRODUCT_CATEGORIES } from "../constants/productCategories.js";
 
 export const createProductBodySchema = z.object({
   sku: z.string().trim().min(1),

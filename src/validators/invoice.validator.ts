@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INVOICE_STATUS } from "../constants/invoiceStatus.ts";
+import { INVOICE_STATUS } from "../constants/invoiceStatus.js";
 
 const objectIdSchema = z
   .string()

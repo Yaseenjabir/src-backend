@@ -1,14 +1,14 @@
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
-import Customer from "../models/Customer.ts";
-import Invoice from "../models/Invoice.ts";
-import Payment from "../models/Payment.ts";
-import Product from "../models/Product.ts";
+import Customer from "../models/Customer.js";
+import Invoice from "../models/Invoice.js";
+import Payment from "../models/Payment.js";
+import Product from "../models/Product.js";
 import {
   INVOICE_STATUS,
   type InvoiceStatus,
-} from "../constants/invoiceStatus.ts";
-import { AppError } from "../utils/AppError.ts";
+} from "../constants/invoiceStatus.js";
+import { AppError } from "../utils/AppError.js";
 
 type InvoiceItemInput = {
   productId?: string;

@@ -3,13 +3,13 @@ import {
   createProduct,
   getProductCategories,
   listProducts,
-} from "../controllers/product.controller.ts";
-import { validateRequest } from "../middlewares/validateRequest.ts";
-import { asyncHandler } from "../utils/asyncHandler.ts";
+} from "../controllers/product.controller.js";
+import { validateRequest } from "../middlewares/validateRequest.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   createProductBodySchema,
   listProductsQuerySchema,
-} from "../validators/product.validator.ts";
+} from "../validators/product.validator.js";
 
 const router = Router();
 

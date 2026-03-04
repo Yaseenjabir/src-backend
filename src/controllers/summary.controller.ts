@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import Invoice from "../models/Invoice.ts";
+import Invoice from "../models/Invoice.js";
 
 export async function getReceivablesSummary(req: Request, res: Response) {
   const [customerWiseOutstanding, outstandingInvoices] = await Promise.all([

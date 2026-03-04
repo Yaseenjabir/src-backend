@@ -7,9 +7,9 @@ import {
   listInvoices,
   listInvoicePayments,
   updateInvoice,
-} from "../controllers/invoice.controller.ts";
-import { validateRequest } from "../middlewares/validateRequest.ts";
-import { asyncHandler } from "../utils/asyncHandler.ts";
+} from "../controllers/invoice.controller.js";
+import { validateRequest } from "../middlewares/validateRequest.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   addInvoicePaymentBodySchema,
   createInvoiceBodySchema,
@@ -17,7 +17,7 @@ import {
   listInvoicesQuerySchema,
   paymentIdParamsSchema,
   updateInvoiceBodySchema,
-} from "../validators/invoice.validator.ts";
+} from "../validators/invoice.validator.js";
 
 const router = Router();
 

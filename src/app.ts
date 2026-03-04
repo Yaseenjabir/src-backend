@@ -7,14 +7,14 @@ import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 
-import authRoutes from "./routes/auth.routes.ts";
-import healthRoutes from "./routes/health.routes.ts";
-import productRoutes from "./routes/product.routes.ts";
-import customerRoutes from "./routes/customer.routes.ts";
-import invoiceRoutes from "./routes/invoice.routes.ts";
-import summaryRoutes from "./routes/summary.routes.ts";
-import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.ts";
-import { requireAdmin } from "./middlewares/auth.middleware.ts";
+import authRoutes from "./routes/auth.routes.js";
+import healthRoutes from "./routes/health.routes.js";
+import productRoutes from "./routes/product.routes.js";
+import customerRoutes from "./routes/customer.routes.js";
+import invoiceRoutes from "./routes/invoice.routes.js";
+import summaryRoutes from "./routes/summary.routes.js";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
+import { requireAdmin } from "./middlewares/auth.middleware.js";
 
 const app = express();
 

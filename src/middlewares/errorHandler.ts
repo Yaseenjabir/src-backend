@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
-import { AppError } from "../utils/AppError.ts";
+import { AppError } from "../utils/AppError.js";
 
 type ErrorResponseBody = {
   success: false;

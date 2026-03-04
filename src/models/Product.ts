@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { PRODUCT_CATEGORIES } from "../constants/productCategories.ts";
+import { PRODUCT_CATEGORIES } from "../constants/productCategories.js";
 
 const productSchema = new mongoose.Schema(
   {

@@ -2,8 +2,8 @@ import type { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { SignOptions } from "jsonwebtoken";
-import User from "../models/User.ts";
-import { AppError } from "../utils/AppError.ts";
+import User from "../models/User.js";
+import { AppError } from "../utils/AppError.js";
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;

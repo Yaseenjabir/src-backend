@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import Product from "../models/Product.ts";
-import { PRODUCT_CATEGORIES } from "../constants/productCategories.ts";
-import { AppError } from "../utils/AppError.ts";
+import Product from "../models/Product.js";
+import { PRODUCT_CATEGORIES } from "../constants/productCategories.js";
+import { AppError } from "../utils/AppError.js";
 
 export async function getProductCategories(req: Request, res: Response) {
   return res.json({ categories: PRODUCT_CATEGORIES });
