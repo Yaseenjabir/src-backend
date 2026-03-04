@@ -1,4 +1,8 @@
-import express, { type Request, type Response } from "express";
+import express, {
+  type Request,
+  type RequestHandler,
+  type Response,
+} from "express";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -14,7 +18,9 @@ import { requireAdmin } from "./middlewares/auth.middleware.ts";
 
 const app = express();
 
-app.use(helmet());
+const helmetMiddleware = helmet as unknown as () => RequestHandler;
+
+app.use(helmetMiddleware());
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
