@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
 import Customer from "../models/Customer.js";
+import Invoice from "../models/Invoice.js";
 import { AppError } from "../utils/AppError.js";
 
 function assertValidObjectId(id: string): void {
@@ -87,6 +88,17 @@ export async function updateCustomer(req: Request, res: Response) {
     Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
   );
 
+  if (payload.is_active === false) {
+    const invoiceCount = await Invoice.countDocuments({ customer_id: id });
+    if (invoiceCount > 0) {
+      throw new AppError(
+        422,
+        "UNPROCESSABLE_ENTITY",
+        "Customer cannot be deactivated while related invoices exist",
+      );
+    }
+  }
+
   const customer = await Customer.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
@@ -102,6 +114,15 @@ export async function updateCustomer(req: Request, res: Response) {
 export async function deleteCustomer(req: Request, res: Response) {
   const { id } = req.params;
   assertValidObjectId(id);
+
+  const invoiceCount = await Invoice.countDocuments({ customer_id: id });
+  if (invoiceCount > 0) {
+    throw new AppError(
+      422,
+      "UNPROCESSABLE_ENTITY",
+      "Customer cannot be deleted while related invoices exist",
+    );
+  }
 
   const customer = await Customer.findByIdAndUpdate(
     id,

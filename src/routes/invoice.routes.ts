@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addInvoicePayment,
   createInvoice,
+  deleteInvoice,
   deletePayment,
   getInvoiceById,
   listInvoices,
@@ -41,6 +42,11 @@ router.patch(
   validateRequest(invoiceIdParamsSchema, "params"),
   validateRequest(updateInvoiceBodySchema),
   asyncHandler(updateInvoice),
+);
+router.delete(
+  "/:id",
+  validateRequest(invoiceIdParamsSchema, "params"),
+  asyncHandler(deleteInvoice),
 );
 router.post(
   "/:id/payments",

@@ -24,7 +24,6 @@ export const paymentIdParamsSchema = z.object({
 });
 
 export const createInvoiceBodySchema = z.object({
-  invoiceNo: z.string().trim().optional(),
   customerId: objectIdSchema,
   invoiceDate: dateStringSchema,
   discount: z.number().int().nonnegative().optional(),

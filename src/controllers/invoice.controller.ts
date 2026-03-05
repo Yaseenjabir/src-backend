@@ -185,14 +185,12 @@ async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
 
 export async function createInvoice(req: Request, res: Response) {
   const {
-    invoiceNo,
     customerId,
     invoiceDate,
     discount: discountInput = 0,
     notes,
     items,
   } = req.body as {
-    invoiceNo?: string;
     customerId?: string;
     invoiceDate?: string;
     discount?: number;
@@ -231,7 +229,7 @@ export async function createInvoice(req: Request, res: Response) {
   }
 
   const invoice = await Invoice.create({
-    invoice_no: (invoiceNo?.trim() || generateInvoiceNo()).toUpperCase(),
+    invoice_no: generateInvoiceNo(),
     customer_id: customer._id,
     invoice_date: parsedDate,
     subtotal,
@@ -385,6 +383,14 @@ export async function updateInvoice(req: Request, res: Response) {
   }
 
   const paidAmount = await getInvoicePaidAmount(id);
+  if (paidAmount > totalAmount) {
+    throw new AppError(
+      422,
+      "UNPROCESSABLE_ENTITY",
+      "total amount cannot be less than already paid amount",
+    );
+  }
+
   const remainingAmount = Math.max(totalAmount - paidAmount, 0);
   const status = deriveStatus(totalAmount, paidAmount);
 
@@ -433,6 +439,28 @@ export async function addInvoicePayment(req: Request, res: Response) {
 
   if (parsedAmount <= 0) {
     throw new AppError(422, "UNPROCESSABLE_ENTITY", "amount must be > 0");
+  }
+
+  const currentPaidAmount = await getInvoicePaidAmount(id);
+  const currentRemainingAmount = Math.max(
+    invoice.total_amount - currentPaidAmount,
+    0,
+  );
+
+  if (currentRemainingAmount <= 0) {
+    throw new AppError(
+      422,
+      "UNPROCESSABLE_ENTITY",
+      "Invoice is already fully paid",
+    );
+  }
+
+  if (parsedAmount > currentRemainingAmount) {
+    throw new AppError(
+      422,
+      "UNPROCESSABLE_ENTITY",
+      `amount cannot be greater than remaining amount (${currentRemainingAmount})`,
+    );
   }
 
   const payment = await Payment.create({
@@ -485,4 +513,19 @@ export async function deletePayment(req: Request, res: Response) {
     message: "Payment deleted successfully",
     invoice: updatedInvoice,
   });
+}
+
+export async function deleteInvoice(req: Request, res: Response) {
+  const { id } = req.params;
+  assertValidObjectId(id, "invoice id");
+
+  const invoice = await Invoice.findById(id);
+  if (!invoice) {
+    throw new AppError(404, "NOT_FOUND", "Invoice not found");
+  }
+
+  await Payment.deleteMany({ invoice_id: id });
+  await Invoice.findByIdAndDelete(id);
+
+  return res.json({ message: "Invoice deleted successfully" });
 }
