@@ -524,7 +524,15 @@ export async function deleteInvoice(req: Request, res: Response) {
     throw new AppError(404, "NOT_FOUND", "Invoice not found");
   }
 
-  await Payment.deleteMany({ invoice_id: id });
+  const paymentCount = await Payment.countDocuments({ invoice_id: id });
+  if (paymentCount > 0) {
+    throw new AppError(
+      422,
+      "UNPROCESSABLE_ENTITY",
+      "Invoice cannot be deleted while payments are associated with it",
+    );
+  }
+
   await Invoice.findByIdAndDelete(id);
 
   return res.json({ message: "Invoice deleted successfully" });
