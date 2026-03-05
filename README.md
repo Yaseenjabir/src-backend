@@ -12,6 +12,9 @@
 
 Server runs on `http://localhost:5000` by default.
 
+Production backend URL:
+- `https://src-backend-dun.vercel.app`
+
 ## Authentication
 
 - The backend uses custom JWT auth.
@@ -43,6 +46,9 @@ Server runs on `http://localhost:5000` by default.
 - `POST /api/v1/invoices/:id/payments`
 - `GET /api/v1/invoices/:id/payments`
 - `DELETE /api/v1/invoices/payments/:paymentId`
+
+Detailed frontend request/response guide:
+- See `API_ENDPOINTS.md`
   
 ## Notes
 
