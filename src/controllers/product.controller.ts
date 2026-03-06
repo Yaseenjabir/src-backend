@@ -52,6 +52,7 @@ export async function createProduct(req: Request, res: Response) {
   };
 
   payload.sku = payload.sku?.trim().toUpperCase();
+  payload.name = payload.name.trim().toUpperCase();
 
   if (!payload.sku) {
     payload.sku = await generateProductSku(payload.category);
@@ -124,6 +125,10 @@ export async function updateProduct(req: Request, res: Response) {
   const payload = Object.fromEntries(
     Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
   );
+
+  if (typeof payload.name === "string") {
+    payload.name = payload.name.trim().toUpperCase();
+  }
 
   const product = await Product.findByIdAndUpdate(id, payload, {
     new: true,
