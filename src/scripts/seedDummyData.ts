@@ -17,6 +17,109 @@ const PRICE_SLABS = [
   1800, 2000, 2500, 3000,
 ];
 
+const FIRST_NAMES = [
+  "Ali",
+  "Ahmed",
+  "Hassan",
+  "Bilal",
+  "Usman",
+  "Umar",
+  "Hamza",
+  "Saad",
+  "Adeel",
+  "Rizwan",
+  "Kashif",
+  "Farhan",
+  "Imran",
+  "Naveed",
+  "Waqas",
+  "Sajid",
+  "Tariq",
+  "Asad",
+  "Shahzaib",
+  "Faizan",
+];
+
+const LAST_NAMES = [
+  "Khan",
+  "Malik",
+  "Butt",
+  "Rana",
+  "Chaudhry",
+  "Sheikh",
+  "Qureshi",
+  "Anwar",
+  "Iqbal",
+  "Siddiqui",
+  "Javed",
+  "Arshad",
+  "Zafar",
+  "Nawaz",
+  "Mehmood",
+];
+
+const SHOP_PREFIX = [
+  "Al Madina",
+  "New City",
+  "Royal",
+  "Galaxy",
+  "Star",
+  "Prime",
+  "City Center",
+  "National",
+  "Punjab",
+  "Future Tech",
+  "Modern",
+  "Smart",
+  "Gujrat",
+  "Mall Road",
+  "Union",
+];
+
+const SHOP_SUFFIX = [
+  "Electronics",
+  "Traders",
+  "Mobile House",
+  "Digital Point",
+  "Communication",
+  "Electro Mart",
+  "Tech Zone",
+  "Center",
+  "Solutions",
+  "Emporium",
+];
+
+const LOCATIONS = [
+  { area: "Bhimber Road", city: "Gujrat" },
+  { area: "Jinnah Road", city: "Gujrat" },
+  { area: "Circular Road", city: "Gujrat" },
+  { area: "Railway Road", city: "Lala Musa" },
+  { area: "GT Road", city: "Kharian" },
+  { area: "Main Bazaar", city: "Sarai Alamgir" },
+  { area: "College Road", city: "Mandi Bahauddin" },
+  { area: "Fawara Chowk", city: "Gujranwala" },
+  { area: "Satellite Town", city: "Rawalpindi" },
+  { area: "Hall Road", city: "Lahore" },
+  { area: "Model Town Link Road", city: "Lahore" },
+  { area: "Saddar Bazar", city: "Sialkot" },
+  { area: "Nishat Chowk", city: "Jhelum" },
+  { area: "Committee Chowk", city: "Rawalpindi" },
+  { area: "Jinnah Colony", city: "Gujrat" },
+];
+
+const PHONE_PREFIXES = [
+  "0300",
+  "0301",
+  "0302",
+  "0305",
+  "0311",
+  "0312",
+  "0313",
+  "0314",
+  "0321",
+  "0333",
+];
+
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -46,13 +149,25 @@ async function generateProductSku(category: string): Promise<string> {
 }
 
 function buildCustomer(index: number) {
-  const seq = (index + 1).toString().padStart(2, "0");
+  const firstName = FIRST_NAMES[index % FIRST_NAMES.length];
+  const lastName = LAST_NAMES[randomInt(0, LAST_NAMES.length - 1)];
+  const shopPrefix = SHOP_PREFIX[index % SHOP_PREFIX.length];
+  const shopSuffix = SHOP_SUFFIX[randomInt(0, SHOP_SUFFIX.length - 1)];
+  const location = LOCATIONS[index % LOCATIONS.length];
+  const phonePrefix = PHONE_PREFIXES[randomInt(0, PHONE_PREFIXES.length - 1)];
+
+  const name = `${firstName} ${lastName}`;
+  const shopName = `${shopPrefix} ${shopSuffix}`;
+  const streetNo = randomInt(1, 125);
+  const block = String.fromCharCode(65 + randomInt(0, 5));
+  const phone = `${phonePrefix}${randomInt(1000000, 9999999)}`;
+
   return {
-    name: `Customer ${seq}`,
-    shop_name: `Shop ${seq}`,
-    address: `Street ${seq}, Gujrat`,
-    phone: `0300${randomInt(1000000, 9999999)}`,
-    notes: "Seeded dummy customer",
+    name,
+    shop_name: shopName,
+    address: `Shop ${streetNo}, Block ${block}, ${location.area}, ${location.city}`,
+    phone,
+    notes: "Seeded realistic-looking customer",
     is_active: true,
   };
 }
