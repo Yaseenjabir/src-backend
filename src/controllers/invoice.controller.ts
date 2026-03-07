@@ -56,12 +56,29 @@ function deriveStatus(totalAmount: number, paidAmount: number): InvoiceStatus {
   return "completed";
 }
 
-function generateInvoiceNo(): string {
-  const stamp = Date.now();
-  const random = Math.floor(Math.random() * 1000)
+function generateInvoiceNoCandidate(): string {
+  const random4Digit = Math.floor(1000 + Math.random() * 9000)
     .toString()
-    .padStart(3, "0");
-  return `INV-${stamp}-${random}`;
+    .padStart(4, "0");
+  return random4Digit;
+}
+
+async function generateInvoiceNo(): Promise<string> {
+  const maxAttempts = 50;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const candidate = generateInvoiceNoCandidate();
+    const existing = await Invoice.exists({ invoice_no: candidate });
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  throw new AppError(
+    500,
+    "INTERNAL_SERVER_ERROR",
+    "Unable to generate unique 4-digit invoice UID",
+  );
 }
 
 async function getInvoicePaidAmount(invoiceId: string): Promise<number> {
@@ -229,7 +246,7 @@ export async function createInvoice(req: Request, res: Response) {
   }
 
   const invoice = await Invoice.create({
-    invoice_no: generateInvoiceNo(),
+    invoice_no: await generateInvoiceNo(),
     customer_id: customer._id,
     invoice_date: parsedDate,
     subtotal,
@@ -290,7 +307,7 @@ export async function listInvoices(req: Request, res: Response) {
 
   const [items, total] = await Promise.all([
     Invoice.find(filter)
-      .populate("customer_id", "name shop_name phone")
+      .populate("customer_id", "name shop_name phone address")
       .sort({ invoice_date: -1, created_at: -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum),
@@ -314,7 +331,7 @@ export async function getInvoiceById(req: Request, res: Response) {
 
   const invoice = await Invoice.findById(id).populate(
     "customer_id",
-    "name shop_name phone",
+    "name shop_name phone address",
   );
   if (!invoice) {
     throw new AppError(404, "NOT_FOUND", "Invoice not found");

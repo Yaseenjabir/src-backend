@@ -135,7 +135,7 @@ export async function listPayments(req: Request, res: Response) {
         select: "invoice_no customer_id total_amount remaining_amount status",
         populate: {
           path: "customer_id",
-          select: "name shop_name phone",
+          select: "name shop_name phone address",
         },
       })
       .sort({ payment_date: -1, created_at: -1 })
