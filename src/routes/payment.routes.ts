@@ -3,7 +3,6 @@ import {
   createPayment,
   deletePayment,
   listPayments,
-  updatePayment,
 } from "../controllers/payment.controller.js";
 import { validateRequest } from "../middlewares/validateRequest.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -11,7 +10,6 @@ import {
   createPaymentBodySchema,
   listPaymentsQuerySchema,
   paymentIdParamsSchema,
-  updatePaymentBodySchema,
 } from "../validators/payment.validator.js";
 
 const router = Router();
@@ -25,12 +23,6 @@ router.post(
   "/",
   validateRequest(createPaymentBodySchema),
   asyncHandler(createPayment),
-);
-router.patch(
-  "/:id",
-  validateRequest(paymentIdParamsSchema, "params"),
-  validateRequest(updatePaymentBodySchema),
-  asyncHandler(updatePayment),
 );
 router.delete(
   "/:id",

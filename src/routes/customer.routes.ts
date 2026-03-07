@@ -2,7 +2,6 @@ import { Router } from "express";
 import {
   createCustomer,
   deleteCustomer,
-  getCustomerById,
   listCustomers,
   updateCustomer,
 } from "../controllers/customer.controller.js";
@@ -26,11 +25,6 @@ router.post(
   "/",
   validateRequest(createCustomerBodySchema),
   asyncHandler(createCustomer),
-);
-router.get(
-  "/:id",
-  validateRequest(customerIdParamsSchema, "params"),
-  asyncHandler(getCustomerById),
 );
 router.patch(
   "/:id",

@@ -1,25 +1,28 @@
-# API Endpoints (Frontend Quick Guide)
+# API Endpoints (Current Routes)
 
 Base URL:
+
 - Local: `http://localhost:5000/api/v1`
 - Production: `https://src-backend-dun.vercel.app/api/v1`
 
-Auth:
-- Send token on protected routes:
-  - `Authorization: Bearer <token>`
-- Protected groups: `products`, `customers`, `invoices`, `summary`, `auth/me`
+Auth header for protected routes:
 
-Money fields:
-- Always integer values (example `250`, not `250.00`).
+- `Authorization: Bearer <token>`
+
+Money format:
+
+- Send integer values only (e.g. `250`, not `250.00`).
 
 ---
 
 ## Health
 
 ### GET `/health`
+
 - Auth: No
-- Body: None
-- Response:
+- Request body: None
+- Expected response:
+
 ```json
 { "status": "ok" }
 ```
@@ -29,22 +32,26 @@ Money fields:
 ## Auth
 
 ### POST `/auth/login`
+
 - Auth: No
-- Body:
+- Request body:
+
 ```json
 {
   "email": "admin@example.com",
   "password": "your_password"
 }
 ```
-- Response:
+
+- Expected response:
+
 ```json
 {
-  "token": "...",
+  "token": "<jwt>",
   "token_type": "Bearer",
   "expires_in": "7d",
   "user": {
-    "id": "...",
+    "id": "65f...",
     "name": "Admin",
     "email": "admin@example.com",
     "role": "admin"
@@ -53,13 +60,15 @@ Money fields:
 ```
 
 ### GET `/auth/me`
+
 - Auth: Yes
-- Body: None
-- Response:
+- Request body: None
+- Expected response:
+
 ```json
 {
   "user": {
-    "id": "...",
+    "id": "65f...",
     "name": "Admin",
     "email": "admin@example.com",
     "role": "admin"
@@ -72,90 +81,75 @@ Money fields:
 ## Products
 
 ### GET `/products/categories`
+
 - Auth: Yes
-- Body: None
-- Response:
+- Request body: None
+- Expected response:
+
 ```json
 {
-  "categories": [
-    "BULB",
-    "TUBE_LIGHT",
-    "SWITCH",
-    "SOCKET",
-    "PLUG",
-    "WIRE",
-    "CABLE",
-    "MCB",
-    "BREAKER",
-    "DB_BOX",
-    "FAN",
-    "HOLDER",
-    "ADAPTER",
-    "EXTENSION_BOARD",
-    "DIMMER",
-    "SENSOR",
-    "CHARGER",
-    "INVERTER",
-    "BATTERY",
-    "OTHER"
-  ]
+  "categories": ["BULB", "SWITCH", "SOCKET", "...", "OTHER"]
 }
 ```
 
-Hardcoded categories array (same as backend constant):
-
-```ts
-[
-  "BULB",
-  "TUBE_LIGHT",
-  "SWITCH",
-  "SOCKET",
-  "PLUG",
-  "WIRE",
-  "CABLE",
-  "MCB",
-  "BREAKER",
-  "DB_BOX",
-  "FAN",
-  "HOLDER",
-  "ADAPTER",
-  "EXTENSION_BOARD",
-  "DIMMER",
-  "SENSOR",
-  "CHARGER",
-  "INVERTER",
-  "BATTERY",
-  "OTHER"
-]
-```
-
 ### GET `/products`
+
 - Auth: Yes
-- Query (all optional):
+- Query params (all optional):
   - `q` (string)
-  - `category` (enum category)
+  - `category` (enum)
   - `isActive` (`true|false`)
   - `page` (number string)
   - `limit` (number string)
 - Example:
-  - `/products?q=switch&category=SWITCH&page=1&limit=20&isActive=true`
+  - `/products?q=switch&category=SWITCH&isActive=true&page=1&limit=20`
+- Expected response:
+
+```json
+{
+  "items": [
+    {
+      "_id": "65f...",
+      "sku": "SWI-123456789",
+      "name": "6A SWITCH",
+      "category": "SWITCH",
+      "price": 250,
+      "is_active": true
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
 
 ### POST `/products`
+
 - Auth: Yes
-- Body (SKU auto-generated if omitted):
+- Request body:
+
 ```json
 {
   "name": "6A Switch",
   "category": "SWITCH",
-  "price": 250
+  "price": 250,
+  "is_active": true
 }
 ```
-- Optional field:
-  - `is_active` (boolean)
+
+- Notes:
+  - `sku` is optional; backend generates it if omitted.
+  - Backend stores `name` in uppercase.
+- Expected response: created product object.
 
 ### PATCH `/products/:id`
+
 - Auth: Yes
-- Body (send only fields to change):
+- Request body (send only changed fields):
+
 ```json
 {
   "name": "6A Switch Premium",
@@ -164,161 +158,427 @@ Hardcoded categories array (same as backend constant):
   "is_active": true
 }
 ```
-- Note: `sku` is not editable from update API.
+
+- Expected response: updated product object.
 
 ### DELETE `/products/:id`
+
 - Auth: Yes
-- Body: None
-- Behavior: soft delete (`is_active=false`)
+- Request body: None
+- Behavior: soft delete (`is_active = false`)
+- Expected response:
+
+```json
+{
+  "message": "Product deactivated successfully",
+  "product": {
+    "_id": "65f...",
+    "is_active": false
+  }
+}
+```
 
 ---
 
 ## Customers
 
 ### GET `/customers`
+
 - Auth: Yes
-- Query (all optional):
-  - `q` (string; matches `name`, `shop_name`, `phone`, `address`)
+- Query params (all optional):
+  - `q` (searches `name`, `shop_name`, `phone`, `address`)
   - `isActive` (`true|false`)
   - `page` (number string)
   - `limit` (number string)
+- Expected response:
 
-### POST `/customers`
-- Auth: Yes
-- Body:
 ```json
 {
-  "name": "Ahmad Electronics",
-  "shop_name": "Ahmad Electronics",
-  "address": "Main Bazaar",
+  "items": [
+    {
+      "_id": "65f...",
+      "name": "Ali Khan",
+      "shop_name": "Royal Electronics",
+      "address": "Main Bazar, Gujrat",
+      "phone": "03001234567",
+      "notes": "...",
+      "is_active": true
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### POST `/customers`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "name": "Ali Khan",
+  "shop_name": "Royal Electronics",
+  "address": "Main Bazar, Gujrat",
   "phone": "03001234567",
   "notes": "Optional",
   "is_active": true
 }
 ```
-- Required: `name`
 
-### GET `/customers/:id`
-- Auth: Yes
-- Body: None
+- Required field: `name`
+- Expected response: created customer object.
 
 ### PATCH `/customers/:id`
+
 - Auth: Yes
-- Body (at least one field):
+- Request body (at least one field):
+
 ```json
 {
-  "name": "Updated Name",
-  "shop_name": "Updated Shop",
-  "address": "Updated Address",
+  "name": "Ali Raza",
+  "shop_name": "Royal Digital",
+  "address": "Updated address",
   "phone": "03111234567",
   "notes": "Updated",
   "is_active": true
 }
 ```
 
+- Expected response: updated customer object.
+
 ### DELETE `/customers/:id`
+
 - Auth: Yes
-- Body: None
-- Behavior: soft delete (`is_active=false`)
+- Request body: None
+- Behavior: soft delete (`is_active = false`) if no related invoices exist.
+- Expected response:
+
+```json
+{
+  "message": "Customer deactivated successfully",
+  "customer": {
+    "_id": "65f...",
+    "is_active": false
+  }
+}
+```
 
 ---
 
 ## Invoices
 
 ### GET `/invoices`
+
 - Auth: Yes
-- Query (all optional):
+- Query params (all optional):
   - `status` (`unpaid|partial|completed`)
   - `customerId` (ObjectId)
   - `fromDate` (date string)
   - `toDate` (date string)
   - `page` (number string)
   - `limit` (number string)
+- Expected response:
 
-### POST `/invoices`
-- Auth: Yes
-- Body:
 ```json
 {
-  "invoiceNo": "INV-123",
-  "customerId": "65f0...",
-  "invoiceDate": "2026-03-05",
+  "items": [
+    {
+      "_id": "65f...",
+      "invoice_no": "INV-174...",
+      "customer_id": {
+        "_id": "65c...",
+        "name": "Ali Khan",
+        "shop_name": "Royal Electronics",
+        "phone": "03001234567"
+      },
+      "invoice_date": "2026-03-07T00:00:00.000Z",
+      "total_amount": 3000,
+      "paid_amount": 1000,
+      "remaining_amount": 2000,
+      "status": "partial"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### POST `/invoices`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "customerId": "65c...",
+  "invoiceDate": "2026-03-07",
   "discount": 0,
   "notes": "Optional",
   "items": [
     {
-      "productId": "65f1...",
+      "productId": "65a...",
       "quantity": 2,
       "unitPriceSnapshot": 250
     }
   ]
 }
 ```
+
 - Required:
   - `customerId`, `invoiceDate`, non-empty `items`
-  - each item requires `productId`, `quantity > 0`
+  - each item: `productId`, `quantity > 0`
+- Expected response: created invoice object.
 
 ### GET `/invoices/:id`
-- Auth: Yes
-- Body: None
 
-### PATCH `/invoices/:id`
 - Auth: Yes
-- Body (at least one field):
+- Request body: None
+- Expected response: invoice object with populated `customer_id` and line `items`.
+
+### DELETE `/invoices/:id`
+
+- Auth: Yes
+- Request body: None
+- Behavior: deletes invoice and all associated payments.
+- Expected response:
+
 ```json
 {
-  "invoiceDate": "2026-03-06",
-  "discount": 100,
-  "notes": "Updated note",
-  "items": [
-    {
-      "productId": "65f1...",
-      "quantity": 3,
-      "unitPriceSnapshot": 250
-    }
-  ]
+  "message": "Invoice and associated payments deleted successfully",
+  "deleted_payments": 2
 }
 ```
 
 ### POST `/invoices/:id/payments`
+
 - Auth: Yes
-- Body:
+- Request body:
+
 ```json
 {
-  "paymentDate": "2026-03-05",
+  "paymentDate": "2026-03-07",
   "amount": 1000,
   "method": "CASH",
   "reference": "Optional",
   "notes": "Optional"
 }
 ```
+
 - `method` enum: `CASH | BANK | OTHER`
+- Expected response:
+
+```json
+{
+  "payment": {
+    "_id": "65p...",
+    "invoice_id": "65i...",
+    "payment_date": "2026-03-07T00:00:00.000Z",
+    "amount": 1000,
+    "method": "CASH"
+  },
+  "invoice": {
+    "_id": "65i...",
+    "paid_amount": 1000,
+    "remaining_amount": 2000,
+    "status": "partial"
+  }
+}
+```
 
 ### GET `/invoices/:id/payments`
-- Auth: Yes
-- Body: None
 
-### DELETE `/invoices/payments/:paymentId`
 - Auth: Yes
-- Body: None
+- Request body: None
+- Expected response:
+
+```json
+{
+  "invoice": {
+    "_id": "65i...",
+    "invoice_no": "INV-...",
+    "total_amount": 3000,
+    "paid_amount": 1000,
+    "remaining_amount": 2000,
+    "status": "partial"
+  },
+  "payments": [
+    {
+      "_id": "65p...",
+      "invoice_id": "65i...",
+      "payment_date": "2026-03-07T00:00:00.000Z",
+      "amount": 1000,
+      "method": "CASH"
+    }
+  ]
+}
+```
+
+---
+
+## Payments
+
+### GET `/payments`
+
+- Auth: Yes
+- Query params (all optional):
+  - `invoiceId` (ObjectId)
+  - `method` (`CASH|BANK|OTHER`)
+  - `fromDate` (date string)
+  - `toDate` (date string)
+  - `page` (number string)
+  - `limit` (number string)
+- Expected response:
+
+```json
+{
+  "items": [
+    {
+      "_id": "65p...",
+      "payment_date": "2026-03-07T00:00:00.000Z",
+      "amount": 1000,
+      "method": "CASH",
+      "invoice_id": {
+        "_id": "65i...",
+        "invoice_no": "INV-...",
+        "total_amount": 3000,
+        "remaining_amount": 2000,
+        "status": "partial",
+        "customer_id": {
+          "_id": "65c...",
+          "name": "Ali Khan",
+          "shop_name": "Royal Electronics",
+          "phone": "03001234567"
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### POST `/payments`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "invoiceId": "65i...",
+  "paymentDate": "2026-03-07",
+  "amount": 1000,
+  "method": "BANK",
+  "reference": "TRX-123",
+  "notes": "Optional"
+}
+```
+
+- Expected response:
+
+```json
+{
+  "payment": {
+    "_id": "65p...",
+    "invoice_id": "65i...",
+    "payment_date": "2026-03-07T00:00:00.000Z",
+    "amount": 1000,
+    "method": "BANK"
+  },
+  "invoice": {
+    "_id": "65i...",
+    "paid_amount": 1000,
+    "remaining_amount": 2000,
+    "status": "partial"
+  }
+}
+```
+
+### DELETE `/payments/:id`
+
+- Auth: Yes
+- Request body: None
+- Expected response:
+
+```json
+{
+  "message": "Payment deleted successfully",
+  "invoice": {
+    "_id": "65i...",
+    "paid_amount": 0,
+    "remaining_amount": 3000,
+    "status": "unpaid"
+  }
+}
+```
 
 ---
 
 ## Summary
 
-### GET `/summary/receivables`
+### GET `/summary/dashboard`
+
 - Auth: Yes
-- Body: None
-- Response includes:
-  - `totals`
-  - `customer_wise_outstanding`
-  - `outstanding_invoices`
+- Query params (optional):
+  - `fromDate` (date string)
+  - `toDate` (date string)
+  - `overdueDays` (integer string, default `7`)
+- Expected response:
+
+```json
+{
+  "period": {
+    "from": "2026-03-01T00:00:00.000Z",
+    "to": "2026-03-07T23:59:59.999Z"
+  },
+  "overdue_days": 7,
+  "kpis": {
+    "receivable": 120000,
+    "collected": 45000,
+    "partial_count": 8,
+    "overdue_amount": 32000,
+    "overdue_customers": 3
+  },
+  "top_overdue_customer": {
+    "customer_id": "65c...",
+    "customer_name": "Ali Khan",
+    "shop_name": "Royal Electronics",
+    "overdue_amount": 18000,
+    "oldest_invoice_date": "2026-02-20T00:00:00.000Z",
+    "invoice_count": 2
+  },
+  "recent_invoices": []
+}
+```
 
 ---
 
-## Common Validation Notes
+## Common validation/error notes
 
-- ObjectId fields must be valid MongoDB IDs.
+- ObjectIds must be valid MongoDB IDs.
 - Date fields must be valid date strings.
-- Pagination values are number strings (`"1"`, `"20"`).
-- For update endpoints, send only changed fields.
+- `page` / `limit` are numeric strings in query params.
+- Typical error format:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "...",
+    "details": {}
+  }
+}
+```
