@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   createProduct,
   deleteProduct,
-  getProductCategories,
+  getProductModels,
   listProducts,
   updateProduct,
 } from "../controllers/product.controller.js";
@@ -17,7 +17,7 @@ import {
 
 const router = Router();
 
-router.get("/categories", asyncHandler(getProductCategories));
+router.get("/models", asyncHandler(getProductModels));
 router.get(
   "/",
   validateRequest(listProductsQuerySchema, "query"),

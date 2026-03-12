@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
-import { PRODUCT_CATEGORIES } from "../constants/productCategories.js";
+import { PRODUCT_MODELS } from "../constants/productCategories.js";
 import { AppError } from "../utils/AppError.js";
 
 function assertValidObjectId(id: string): void {
@@ -10,15 +10,18 @@ function assertValidObjectId(id: string): void {
   }
 }
 
-function categoryPrefix(category: string): string {
-  const words = category.split("_").filter(Boolean);
-  if (words.length === 0) return "PRD";
-  if (words.length === 1) return words[0].slice(0, 3);
-  return words.map((w) => w[0]).join("");
+function modelPrefix(model: string): string {
+  const map: Record<string, string> = {
+    A_SERIES: "AS",
+    K_SERIES: "KS",
+    R_SERIES: "RS",
+    UNIQUE_SERIES: "US",
+  };
+  return map[model] ?? "PR";
 }
 
-async function generateProductSku(category: string): Promise<string> {
-  const prefix = categoryPrefix(category).toUpperCase();
+async function generateProductSku(model: string): Promise<string> {
+  const prefix = modelPrefix(model);
 
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const stamp = Date.now().toString().slice(-6);
@@ -38,15 +41,15 @@ async function generateProductSku(category: string): Promise<string> {
   );
 }
 
-export async function getProductCategories(req: Request, res: Response) {
-  return res.json({ categories: PRODUCT_CATEGORIES });
+export async function getProductModels(req: Request, res: Response) {
+  return res.json({ models: PRODUCT_MODELS });
 }
 
 export async function createProduct(req: Request, res: Response) {
   const payload = { ...req.body } as {
     sku?: string;
     name: string;
-    category: string;
+    model: string;
     price: number;
     is_active?: boolean;
   };
@@ -55,7 +58,7 @@ export async function createProduct(req: Request, res: Response) {
   payload.name = payload.name.trim().toUpperCase();
 
   if (!payload.sku) {
-    payload.sku = await generateProductSku(payload.category);
+    payload.sku = await generateProductSku(payload.model);
   }
 
   const product = await Product.create(payload);
@@ -64,7 +67,6 @@ export async function createProduct(req: Request, res: Response) {
 
 export async function listProducts(req: Request, res: Response) {
   const {
-    category,
     q,
     isActive = "true",
     page = "1",
@@ -72,17 +74,6 @@ export async function listProducts(req: Request, res: Response) {
   } = req.query;
 
   const filter: Record<string, unknown> = {};
-
-  if (typeof category === "string" && category) {
-    if (
-      !PRODUCT_CATEGORIES.includes(
-        category as (typeof PRODUCT_CATEGORIES)[number],
-      )
-    ) {
-      throw new AppError(400, "BAD_REQUEST", "Invalid category filter");
-    }
-    filter.category = category;
-  }
 
   if (typeof q === "string" && q) {
     filter.name = { $regex: q, $options: "i" };
@@ -100,7 +91,7 @@ export async function listProducts(req: Request, res: Response) {
 
   const [items, total] = await Promise.all([
     Product.find(filter)
-      .sort({ created_at: -1 })
+      .sort({ name: 1, model: 1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum),
     Product.countDocuments(filter),
@@ -121,7 +112,7 @@ export async function updateProduct(req: Request, res: Response) {
   const { id } = req.params;
   assertValidObjectId(id);
 
-  const allowedFields = ["name", "category", "price", "is_active"];
+  const allowedFields = ["name", "model", "price", "is_active"];
   const payload = Object.fromEntries(
     Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
   );

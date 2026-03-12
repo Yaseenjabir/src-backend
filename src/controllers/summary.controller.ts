@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import Invoice from "../models/Invoice.js";
-import Payment from "../models/Payment.js";
+import LedgerPayment from "../models/LedgerPayment.js";
 import { AppError } from "../utils/AppError.js";
 
 function parseOptionalDate(
@@ -156,7 +156,7 @@ export async function getDashboardSummary(req: Request, res: Response) {
         },
       },
     ]),
-    Payment.aggregate([
+    LedgerPayment.aggregate([
       {
         $match: {
           payment_date: {

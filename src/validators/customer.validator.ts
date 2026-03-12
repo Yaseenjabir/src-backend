@@ -30,6 +30,10 @@ export const updateCustomerBodySchema = z
     message: "At least one field is required",
   });
 
+export const openingBalanceBodySchema = z.object({
+  amount: z.number().int().min(0),
+});
+
 export const listCustomersQuerySchema = z.object({
   q: z.string().trim().optional(),
   isActive: z.enum(["true", "false"]).optional(),

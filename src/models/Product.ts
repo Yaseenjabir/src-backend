@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { PRODUCT_CATEGORIES } from "../constants/productCategories.js";
+import { PRODUCT_MODELS } from "../constants/productCategories.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -15,9 +15,9 @@ const productSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    category: {
+    model: {
       type: String,
-      enum: PRODUCT_CATEGORIES,
+      enum: PRODUCT_MODELS,
       required: true,
     },
     price: {
@@ -39,8 +39,7 @@ const productSchema = new mongoose.Schema(
   },
 );
 
-productSchema.index({ category: 1 });
-productSchema.index({ category: 1, name: 1 });
+productSchema.index({ name: 1, model: 1 }, { unique: true });
 
 const Product = mongoose.model("Product", productSchema);
 
