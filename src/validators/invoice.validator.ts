@@ -13,6 +13,7 @@ const invoiceItemSchema = z.object({
   productId: objectIdSchema,
   quantity: z.number().int().positive(),
   unitPriceSnapshot: z.number().int().nonnegative().optional(),
+  boxQty: z.number().int().nonnegative().optional(),
 });
 
 export const invoiceIdParamsSchema = z.object({

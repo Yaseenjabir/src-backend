@@ -14,6 +14,7 @@ type InvoiceItemInput = {
   productId?: string;
   quantity?: number;
   unitPriceSnapshot?: number;
+  boxQty?: number;
 };
 
 function assertValidObjectId(id: string, fieldName: string): void {
@@ -194,6 +195,7 @@ async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
       unit_price_snapshot: unitPrice,
       quantity,
       line_total: lineTotal,
+      box_qty: item.boxQty !== undefined ? assertInteger(item.boxQty, `items[${index}].boxQty`) : undefined,
     };
   });
 

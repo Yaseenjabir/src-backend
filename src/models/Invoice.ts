@@ -45,6 +45,7 @@ const invoiceItemSchema = new mongoose.Schema(
         message: "line_total must be a whole integer",
       },
     },
+    box_qty: { type: Number, min: 0 },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
