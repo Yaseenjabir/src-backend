@@ -289,7 +289,7 @@ Money format:
   "items": [
     {
       "_id": "65f...",
-      "invoice_no": "INV-174...",
+      "invoice_no": "1234",
       "customer_id": {
         "_id": "65c...",
         "name": "Ali Khan",
@@ -327,28 +327,55 @@ Money format:
     {
       "productId": "65a...",
       "quantity": 2,
-      "unitPriceSnapshot": 250
+      "unitPriceSnapshot": 250,
+      "boxQty": 3
     }
   ]
 }
 ```
 
-- Required:
-  - `customerId`, `invoiceDate`, non-empty `items`
-  - each item: `productId`, `quantity > 0`
-- Expected response: created invoice object.
+- Required: `customerId`, `invoiceDate`, non-empty `items`; each item needs `productId` and `quantity > 0`
+- `unitPriceSnapshot` defaults to product's current price if omitted
+- `boxQty` is optional — stored per line item, does not affect pricing
+- Expected response (201): created invoice object.
 
 ### GET `/invoices/:id`
 
 - Auth: Yes
 - Request body: None
-- Expected response: invoice object with populated `customer_id` and line `items`.
+- Expected response: invoice object with populated `customer_id` and embedded `items` (each item includes `box_qty` if set).
+
+### PATCH `/invoices/:id`
+
+- Auth: Yes
+- Request body (at least one field required):
+
+```json
+{
+  "invoiceDate": "2026-03-10",
+  "discount": 500,
+  "notes": "Updated note",
+  "items": [
+    {
+      "productId": "65a...",
+      "quantity": 3,
+      "unitPriceSnapshot": 250,
+      "boxQty": 2
+    }
+  ]
+}
+```
+
+- All fields optional; send only what changed
+- If `items` is provided it **replaces** the entire items list (min 1 item)
+- Business rule: new total cannot be less than already paid amount
+- Expected response: updated invoice object.
 
 ### DELETE `/invoices/:id`
 
 - Auth: Yes
 - Request body: None
-- Behavior: deletes invoice and all associated payments.
+- Behavior: hard deletes invoice and all associated payments.
 - Expected response:
 
 ```json
@@ -357,6 +384,28 @@ Money format:
   "deleted_payments": 2
 }
 ```
+
+### POST `/invoices/:id/items`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "items": [
+    {
+      "productId": "65a...",
+      "quantity": 5,
+      "unitPriceSnapshot": 300,
+      "boxQty": 1
+    }
+  ]
+}
+```
+
+- Appends new items to the existing invoice items list; does not replace existing items
+- Recalculates `subtotal`, `total_amount`, `remaining_amount`, and `status`
+- Expected response: updated invoice object.
 
 ### POST `/invoices/:id/payments`
 
@@ -404,7 +453,7 @@ Money format:
 {
   "invoice": {
     "_id": "65i...",
-    "invoice_no": "INV-...",
+    "invoice_no": "1234",
     "total_amount": 3000,
     "paid_amount": 1000,
     "remaining_amount": 2000,
@@ -419,6 +468,25 @@ Money format:
       "method": "CASH"
     }
   ]
+}
+```
+
+### DELETE `/invoices/payments/:paymentId`
+
+- Auth: Yes
+- Request body: None
+- Behavior: deletes the payment and recalculates the invoice's `paid_amount`, `remaining_amount`, and `status`.
+- Expected response:
+
+```json
+{
+  "message": "Payment deleted successfully",
+  "invoice": {
+    "_id": "65i...",
+    "paid_amount": 0,
+    "remaining_amount": 3000,
+    "status": "unpaid"
+  }
 }
 ```
 
@@ -502,24 +570,6 @@ Money format:
     "paid_amount": 1000,
     "remaining_amount": 2000,
     "status": "partial"
-  }
-}
-```
-
-### DELETE `/payments/:id`
-
-- Auth: Yes
-- Request body: None
-- Expected response:
-
-```json
-{
-  "message": "Payment deleted successfully",
-  "invoice": {
-    "_id": "65i...",
-    "paid_amount": 0,
-    "remaining_amount": 3000,
-    "status": "unpaid"
   }
 }
 ```

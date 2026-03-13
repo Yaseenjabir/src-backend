@@ -4,8 +4,8 @@ import { connectDB } from "../config/db.js";
 import Customer from "../models/Customer.js";
 import Product from "../models/Product.js";
 import {
-  PRODUCT_CATEGORIES,
-  type ProductCategory,
+  PRODUCT_MODELS,
+  type ProductModel,
 } from "../constants/productCategories.js";
 
 dotenv.config();
@@ -172,7 +172,7 @@ function buildCustomer(index: number) {
   };
 }
 
-function buildProductName(category: ProductCategory, index: number): string {
+function buildProductName(category: ProductModel, index: number): string {
   const seq = (index + 1).toString().padStart(2, "0");
   return `${category.replace(/_/g, " ")} ${seq}`;
 }
@@ -186,13 +186,13 @@ async function seedProducts() {
   const products = [];
 
   for (let i = 0; i < PRODUCT_COUNT; i += 1) {
-    const category = PRODUCT_CATEGORIES[i % PRODUCT_CATEGORIES.length];
+    const category = PRODUCT_MODELS[i % PRODUCT_MODELS.length];
     const sku = await generateProductSku(category);
 
     products.push({
       sku,
       name: buildProductName(category, i),
-      category,
+      model: category,
       price: randomPriceFromSlabs(),
       is_active: true,
     });

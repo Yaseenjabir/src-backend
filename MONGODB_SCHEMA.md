@@ -9,7 +9,7 @@
   "sku": "LED-12W-001",
   "name": "LED Bulb 12W",
   "category": "BULB",
-  "price": "Decimal128(300.00)",
+  "price": 300,
   "is_active": true,
   "created_at": "ISODate",
   "updated_at": "ISODate"
@@ -60,14 +60,14 @@ Optional enhancement:
 ```json
 {
   "_id": "ObjectId",
-  "invoice_no": "INV-1001",
+  "invoice_no": "1234",
   "customer_id": "ObjectId",
   "invoice_date": "ISODate",
-  "subtotal": "Decimal128(9500.00)",
-  "discount": "Decimal128(500.00)",
-  "total_amount": "Decimal128(9000.00)",
-  "paid_amount": "Decimal128(4000.00)",
-  "remaining_amount": "Decimal128(5000.00)",
+  "subtotal": 9500,
+  "discount": 500,
+  "total_amount": 9000,
+  "paid_amount": 4000,
+  "remaining_amount": 5000,
   "status": "partial",
   "notes": "",
   "items": [
@@ -76,11 +76,10 @@ Optional enhancement:
       "product_id": "ObjectId",
       "product_name_snapshot": "LED Bulb 12W",
       "sku_snapshot": "LED-12W-001",
-      "unit_price_snapshot": "Decimal128(300.00)",
+      "unit_price_snapshot": 300,
       "quantity": 10,
-      "line_total": "Decimal128(3000.00)",
-      "created_at": "ISODate",
-      "updated_at": "ISODate"
+      "line_total": 3000,
+      "box_qty": 5
     }
   ],
   "created_at": "ISODate",
@@ -94,7 +93,7 @@ Optional enhancement:
   "_id": "ObjectId",
   "invoice_id": "ObjectId",
   "payment_date": "ISODate",
-  "amount": "Decimal128(1000.00)",
+  "amount": 1000,
   "method": "CASH",
   "reference": "",
   "notes": "",

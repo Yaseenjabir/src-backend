@@ -43,6 +43,8 @@ Production backend URL:
 - `POST /api/v1/invoices`
 - `GET /api/v1/invoices/:id`
 - `PATCH /api/v1/invoices/:id`
+- `DELETE /api/v1/invoices/:id`
+- `POST /api/v1/invoices/:id/items`
 - `POST /api/v1/invoices/:id/payments`
 - `GET /api/v1/invoices/:id/payments`
 - `DELETE /api/v1/invoices/payments/:paymentId`

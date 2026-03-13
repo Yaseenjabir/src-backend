@@ -50,15 +50,15 @@ Base path: `/api/v1`
 - `GET /invoices` (filter by status/customer/date)
 - `POST /invoices`
 - `GET /invoices/:id`
-- `PATCH /invoices/:id` (replace/edit items + meta)
+- `PATCH /invoices/:id` (edit date/discount/notes/items)
+- `DELETE /invoices/:id` (hard delete + cascade payments)
+- `POST /invoices/:id/items` (append items without replacing)
 - `POST /invoices/:id/payments` (record payment)
 - `GET /invoices/:id/payments`
+- `DELETE /invoices/payments/:paymentId` (recompute invoice totals)
 
 ### Payments
-- `GET /payments` (optional global listing)
-- `GET /payments/:id`
-- `PATCH /payments/:id` (limited edit)
-- `DELETE /payments/:id` (recompute invoice totals)
+- `GET /payments` (global listing with filters)
 
 ### Summary / Receivables
 - `GET /summary/receivables`
@@ -75,7 +75,7 @@ Base path: `/api/v1`
   "discount": 0,
   "notes": "optional",
   "items": [
-    { "productId": "ObjectId", "quantity": 2, "unitPriceSnapshot": 1500 }
+    { "productId": "ObjectId", "quantity": 2, "unitPriceSnapshot": 1500, "boxQty": 3 }
   ]
 }
 ```
@@ -179,9 +179,13 @@ backend/
       auth.controller.ts
       product.controller.ts
       customer.controller.ts
+      invoice.controller.ts
+      payment.controller.ts
+      summary.controller.ts
     middlewares/
       auth.middleware.ts
       errorHandler.ts
+      validateRequest.ts
     models/
       User.ts
       Product.ts
@@ -193,6 +197,14 @@ backend/
       health.routes.ts
       product.routes.ts
       customer.routes.ts
+      invoice.routes.ts
+      payment.routes.ts
+      summary.routes.ts
+    validators/
+      invoice.validator.ts
+      product.validator.ts
+      customer.validator.ts
+      payment.validator.ts
     utils/
       AppError.ts
       asyncHandler.ts
@@ -201,7 +213,8 @@ backend/
 ## 9) Milestone Plan
 1. ✅ Core setup: TypeScript + MongoDB + global error handling
 2. ✅ Auth: admin login, protected routes, bootstrap admin
-3. ✅ Products + Customers CRUD (in progress scope)
-4. ⏳ Invoice create/read/update (with item snapshots)
-5. ⏳ Payments and status/remaining auto-update
-6. ⏳ Summary endpoint + tests + API docs
+3. ✅ Products + Customers CRUD
+4. ✅ Invoice create/read/update/delete (with item snapshots, box_qty per item)
+5. ✅ Payments: add, list, delete with auto-recalculate
+6. ✅ Summary/dashboard endpoint
+7. ✅ API docs
