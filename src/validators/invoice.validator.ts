@@ -51,6 +51,10 @@ export const listInvoicesQuerySchema = z.object({
   limit: z.string().regex(/^\d+$/).optional(),
 });
 
+export const appendItemsBodySchema = z.object({
+  items: z.array(invoiceItemSchema).min(1),
+});
+
 export const addInvoicePaymentBodySchema = z.object({
   paymentDate: dateStringSchema,
   amount: z.number().int().positive(),

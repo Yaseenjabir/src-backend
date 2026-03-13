@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import mongoose from "mongoose";
 import Customer from "../models/Customer.js";
 import Invoice from "../models/Invoice.js";
+import LedgerPayment from "../models/LedgerPayment.js";
+import Payment from "../models/Payment.js";
 import { AppError } from "../utils/AppError.js";
 
 function assertValidObjectId(id: string): void {
@@ -88,17 +90,6 @@ export async function updateCustomer(req: Request, res: Response) {
     Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
   );
 
-  if (payload.is_active === false) {
-    const invoiceCount = await Invoice.countDocuments({ customer_id: id });
-    if (invoiceCount > 0) {
-      throw new AppError(
-        422,
-        "UNPROCESSABLE_ENTITY",
-        "Customer cannot be deactivated while related invoices exist",
-      );
-    }
-  }
-
   const customer = await Customer.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
@@ -141,24 +132,22 @@ export async function deleteCustomer(req: Request, res: Response) {
   const { id } = req.params;
   assertValidObjectId(id);
 
-  const invoiceCount = await Invoice.countDocuments({ customer_id: id });
-  if (invoiceCount > 0) {
-    throw new AppError(
-      422,
-      "UNPROCESSABLE_ENTITY",
-      "Customer cannot be deleted while related invoices exist",
-    );
-  }
-
-  const customer = await Customer.findByIdAndUpdate(
-    id,
-    { is_active: false },
-    { new: true, runValidators: true },
-  );
-
+  const customer = await Customer.findById(id);
   if (!customer) {
     throw new AppError(404, "NOT_FOUND", "Customer not found");
   }
 
-  return res.json({ message: "Customer deactivated successfully", customer });
+  // Get all invoice IDs for this customer so we can delete their payments
+  const invoices = await Invoice.find({ customer_id: id }, "_id");
+  const invoiceIds = invoices.map((inv) => inv._id);
+
+  await Promise.all([
+    Payment.deleteMany({ invoice_id: { $in: invoiceIds } }),
+    Invoice.deleteMany({ customer_id: id }),
+    LedgerPayment.deleteMany({ customer_id: id }),
+  ]);
+
+  await Customer.findByIdAndDelete(id);
+
+  return res.json({ message: "Customer and all associated data deleted" });
 }

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   addInvoicePayment,
+  appendInvoiceItems,
   createInvoice,
   deleteInvoice,
   getInvoiceById,
@@ -11,6 +12,7 @@ import { validateRequest } from "../middlewares/validateRequest.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   addInvoicePaymentBodySchema,
+  appendItemsBodySchema,
   createInvoiceBodySchema,
   invoiceIdParamsSchema,
   listInvoicesQuerySchema,
@@ -37,6 +39,12 @@ router.delete(
   "/:id",
   validateRequest(invoiceIdParamsSchema, "params"),
   asyncHandler(deleteInvoice),
+);
+router.post(
+  "/:id/items",
+  validateRequest(invoiceIdParamsSchema, "params"),
+  validateRequest(appendItemsBodySchema),
+  asyncHandler(appendInvoiceItems),
 );
 router.post(
   "/:id/payments",

@@ -428,6 +428,33 @@ export async function updateInvoice(req: Request, res: Response) {
   return res.json(updatedInvoice);
 }
 
+export async function appendInvoiceItems(req: Request, res: Response) {
+  const { id } = req.params;
+  assertValidObjectId(id, "invoice id");
+
+  const invoice = await Invoice.findById(id);
+  if (!invoice) {
+    throw new AppError(404, "NOT_FOUND", "Invoice not found");
+  }
+
+  const { items } = req.body as { items?: InvoiceItemInput[] };
+  const { items: newItems, subtotal: addedSubtotal } = await buildInvoiceItems(
+    items ?? [],
+  );
+
+  invoice.items.push(...newItems);
+  invoice.subtotal += addedSubtotal;
+  invoice.total_amount = invoice.subtotal - invoice.discount;
+  invoice.remaining_amount = Math.max(
+    invoice.total_amount - invoice.paid_amount,
+    0,
+  );
+  invoice.status = deriveStatus(invoice.total_amount, invoice.paid_amount);
+
+  await invoice.save();
+  return res.json(invoice);
+}
+
 export async function addInvoicePayment(req: Request, res: Response) {
   const { id } = req.params;
   assertValidObjectId(id, "invoice id");

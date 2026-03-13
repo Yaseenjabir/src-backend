@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import mongoose from "mongoose";
 import LedgerPayment from "../models/LedgerPayment.js";
 import Customer from "../models/Customer.js";
+import Invoice from "../models/Invoice.js";
 import { AppError } from "../utils/AppError.js";
 
 export async function listLedgerPayments(req: Request, res: Response) {
@@ -67,6 +68,25 @@ export async function createLedgerPayment(req: Request, res: Response) {
   const customer = await Customer.findById(customerId);
   if (!customer) {
     throw new AppError(404, "NOT_FOUND", "Customer not found");
+  }
+
+  // Compute remaining balance and reject if payment exceeds it
+  const [invoices, existingPayments] = await Promise.all([
+    Invoice.find({ customer_id: customerId }, "total_amount"),
+    LedgerPayment.find({ customer_id: customerId }, "amount"),
+  ]);
+  const totalOutstanding =
+    (customer.opening_balance ?? 0) +
+    invoices.reduce((s, inv) => s + (inv.total_amount ?? 0), 0);
+  const totalPaid = existingPayments.reduce((s, p) => s + p.amount, 0);
+  const remaining = totalOutstanding - totalPaid;
+
+  if (amount > remaining) {
+    throw new AppError(
+      422,
+      "UNPROCESSABLE_ENTITY",
+      `Payment amount (${amount}) exceeds remaining balance (${remaining})`,
+    );
   }
 
   const payment = await LedgerPayment.create({
