@@ -6,7 +6,8 @@ Build a simple, reliable backend to manage:
 - Customers
 - Invoices
 - Invoice Items
-- Payments
+- Payments (per-invoice and global)
+- Ledger Payments (customer account-level)
 - Receivables summary
 
 This design ignores hosting/deployment and focuses on functionality.
@@ -16,7 +17,7 @@ This design ignores hosting/deployment and focuses on functionality.
 - Framework: Express.js
 - Database: MongoDB (Atlas)
 - ODM/Query: Mongoose
-- Validation: Zod/Joi
+- Validation: Zod
 - Auth: JWT (single admin role initially)
 
 > For quick local delivery, use local MongoDB or Atlas free tier; move to paid Atlas tier for production reliability.
@@ -29,22 +30,22 @@ Base path: `/api/v1`
 - `POST /auth/login` (admin login, returns JWT token)
 - `GET /auth/me` (current admin profile)
 
-> Route protection: all business routes are admin-protected (`products`, `customers`, and upcoming `invoices`/`payments`/`summary`).
+> Route protection: all business routes are admin-protected.
 
 ### Products
-- `GET /products` (list + search + pagination + filter by category)
-- `GET /products/categories` (returns enum list for frontend dropdown)
+- `GET /products/models` (returns model enum list for frontend dropdown)
+- `GET /products` (list + search + pagination)
 - `POST /products` (create)
-- `GET /products/:id`
 - `PATCH /products/:id` (update)
-- `DELETE /products/:id` (soft delete -> `is_active=false`)
+- `DELETE /products/:id` (soft delete → `is_active=false`)
 
 ### Customers
 - `GET /customers`
 - `POST /customers`
 - `GET /customers/:id`
 - `PATCH /customers/:id`
-- `DELETE /customers/:id` (soft delete)
+- `PATCH /customers/:id/opening-balance` (one-time set of opening balance)
+- `DELETE /customers/:id` (hard delete + cascade invoices, payments, ledger payments)
 
 ### Invoices
 - `GET /invoices` (filter by status/customer/date)
@@ -53,17 +54,26 @@ Base path: `/api/v1`
 - `PATCH /invoices/:id` (edit date/discount/notes/items)
 - `DELETE /invoices/:id` (hard delete + cascade payments)
 - `POST /invoices/:id/items` (append items without replacing)
-- `POST /invoices/:id/payments` (record payment)
+- `POST /invoices/:id/payments` (record invoice-scoped payment)
 - `GET /invoices/:id/payments`
 - `DELETE /invoices/payments/:paymentId` (recompute invoice totals)
 
-### Payments
+### Payments (Global)
 - `GET /payments` (global listing with filters)
+- `POST /payments` (create payment by invoiceId in body)
+- `DELETE /payments/:id` (delete + recompute invoice totals)
 
-### Summary / Receivables
-- `GET /summary/receivables`
-  - customer-wise total remaining
-  - unpaid/partially paid invoice list
+### Ledger Payments
+- `GET /ledger-payments` (global listing, filterable by customerId/method)
+- `DELETE /ledger-payments/:id`
+- `GET /customers/:customerId/ledger-payments` (customer-scoped list)
+- `POST /customers/:customerId/ledger-payments` (create, validated against balance)
+
+### Summary / Dashboard
+- `GET /summary/dashboard`
+  - KPIs: total receivable, collected (period), partial count, overdue amount/customers
+  - Top overdue customer
+  - Last 5 recent invoices
 
 ## 4) Request/Response Contract Notes
 
@@ -83,12 +93,14 @@ Base path: `/api/v1`
 ### Create Product Request
 ```json
 {
-  "sku": "SW-6A-001",
-  "name": "6A Switch",
-  "category": "SWITCH",
+  "sku": "AS-001",
+  "name": "A Series 01",
+  "model": "A_SERIES",
   "price": 250
 }
 ```
+
+`model` enum: `A_SERIES | K_SERIES | R_SERIES | UNIQUE_SERIES`
 
 ### Admin Login Request
 ```json
@@ -98,7 +110,7 @@ Base path: `/api/v1`
 }
 ```
 
-### Admin Login Response (example)
+### Admin Login Response
 ```json
 {
   "token": "<jwt>",
@@ -113,7 +125,7 @@ Base path: `/api/v1`
 }
 ```
 
-### Add Payment Request
+### Add Payment Request (invoice-scoped)
 ```json
 {
   "paymentDate": "2026-03-01",
@@ -124,27 +136,43 @@ Base path: `/api/v1`
 }
 ```
 
+### Create Ledger Payment Request
+```json
+{
+  "amount": 5000,
+  "method": "CASH",
+  "paymentDate": "2026-03-01T00:00:00.000Z",
+  "notes": "optional"
+}
+```
+
+### Set Opening Balance Request
+```json
+{
+  "amount": 15000
+}
+```
+
 ## 5) Validation + Error Handling
 - Standard errors:
   - `400` invalid payload
   - `404` entity not found
   - `409` duplicate SKU or invoice number conflict
-  - `422` business rule failure (e.g., payment amount <= 0)
+  - `422` business rule failure (e.g., payment exceeds remaining balance)
 - Use whole integers for monetary values (e.g., `300`, not `300.00`).
 - Reject non-integer money values for `price`, `discount`, `unitPriceSnapshot`, and `amount`.
-- Reject product create/update if `category` is outside enum.
+- Reject product create/update if `model` is outside enum.
 - Keep enum values uppercase to avoid mismatch.
-- Use MongoDB transactions for invoice/item/payment writes.
 
 ## 6) Indexing
 - `products.sku` unique
-- `products.category`
-- `products` compound index: `{ category: 1, name: 1 }`
+- `products` compound unique index: `{ name: 1, model: 1 }`
+- `customers.phone`
 - `invoices.invoice_no` unique
 - `invoices` compound index: `{ customer_id: 1, status: 1 }`
-- `invoices.invoice_date`
+- `invoices.invoice_date: -1`
 - `payments` compound index: `{ invoice_id: 1, payment_date: -1 }`
-- `customers.phone`
+- `ledger_payments` compound index: `{ customer_id: 1, payment_date: -1 }`
 
 ## 7) Security (minimal v1)
 - Custom JWT auth with single role: `admin`.
@@ -158,14 +186,11 @@ Base path: `/api/v1`
   - optional: `JWT_EXPIRES_IN` (default `7d`)
 - Audit fields (`created_at`, `updated_at`) mandatory.
 
-## 8) Suggested Folder Structure
+## 8) Folder Structure
 
 ```text
 backend/
   .env.example
-  postman/
-    SRC_Backend.postman_collection.json
-    SRC_Local.postman_environment.json
   src/
     app.ts
     server.ts
@@ -173,14 +198,15 @@ backend/
       db.ts
       bootstrapAdmin.ts
     constants/
-      productCategories.ts
-      invoiceStatus.ts
+      productCategories.ts   ← exports PRODUCT_MODELS, ProductModel, MODEL_LABELS
+      invoiceStatus.ts       ← exports INVOICE_STATUS, InvoiceStatus
     controllers/
       auth.controller.ts
       product.controller.ts
       customer.controller.ts
       invoice.controller.ts
       payment.controller.ts
+      ledgerPayment.controller.ts
       summary.controller.ts
     middlewares/
       auth.middleware.ts
@@ -192,6 +218,7 @@ backend/
       Customer.ts
       Invoice.ts
       Payment.ts
+      LedgerPayment.ts
     routes/
       auth.routes.ts
       health.routes.ts
@@ -199,12 +226,17 @@ backend/
       customer.routes.ts
       invoice.routes.ts
       payment.routes.ts
+      ledgerPayment.routes.ts
       summary.routes.ts
+    scripts/
+      seedDummyData.ts
     validators/
-      invoice.validator.ts
+      auth.validator.ts
       product.validator.ts
       customer.validator.ts
+      invoice.validator.ts
       payment.validator.ts
+      ledgerPayment.validator.ts
     utils/
       AppError.ts
       asyncHandler.ts
@@ -215,6 +247,7 @@ backend/
 2. ✅ Auth: admin login, protected routes, bootstrap admin
 3. ✅ Products + Customers CRUD
 4. ✅ Invoice create/read/update/delete (with item snapshots, box_qty per item)
-5. ✅ Payments: add, list, delete with auto-recalculate
-6. ✅ Summary/dashboard endpoint
-7. ✅ API docs
+5. ✅ Payments: add, list, delete with auto-recalculate (invoice-scoped + global)
+6. ✅ Ledger Payments: customer account-level payments with balance validation
+7. ✅ Summary/dashboard endpoint
+8. ✅ API docs

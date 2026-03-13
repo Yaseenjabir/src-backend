@@ -25,6 +25,16 @@
     },
     {
       "name": "Auth",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
       "item": [
         {
           "name": "Admin Login",
@@ -61,17 +71,7 @@
           },
           "response": []
         }
-      ],
-      "auth": {
-        "type": "bearer",
-        "bearer": [
-          {
-            "key": "token",
-            "value": "{{adminToken}}",
-            "type": "string"
-          }
-        ]
-      }
+      ]
     },
     {
       "name": "Products",
@@ -87,14 +87,14 @@
       },
       "item": [
         {
-          "name": "Get Product Categories",
+          "name": "Get Product Models",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/products/categories",
+              "raw": "{{baseUrl}}/api/v1/products/models",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "products", "categories"]
+              "path": ["api", "v1", "products", "models"]
             }
           },
           "response": []
@@ -109,45 +109,9 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products"],
               "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "isActive",
-                  "value": "true"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Products By Category",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/products?category=SWITCH&page=1&limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "products"],
-              "query": [
-                {
-                  "key": "category",
-                  "value": "SWITCH"
-                },
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "isActive", "value": "true" }
               ]
             }
           },
@@ -159,22 +123,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/products?q=bulb&page=1&limit=20",
+              "raw": "{{baseUrl}}/api/v1/products?q=series&page=1&limit=20",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products"],
               "query": [
-                {
-                  "key": "q",
-                  "value": "bulb"
-                },
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
+                { "key": "q", "value": "series" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
               ]
             }
           },
@@ -184,15 +139,10 @@
           "name": "Create Product",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"6A Switch\",\n  \"category\": \"SWITCH\",\n  \"price\": 250\n}"
+              "raw": "{\n  \"name\": \"A Series 01\",\n  \"model\": \"A_SERIES\",\n  \"price\": 250\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/products",
@@ -206,15 +156,10 @@
           "name": "Create Product (Auto SKU)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"10A Socket\",\n  \"category\": \"SOCKET\",\n  \"price\": 380\n}"
+              "raw": "{\n  \"name\": \"K Series 01\",\n  \"model\": \"K_SERIES\",\n  \"price\": 380\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/products",
@@ -228,15 +173,10 @@
           "name": "Create Product (Validation error test)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Invalid Product\",\n  \"category\": \"NOT_A_CATEGORY\",\n  \"price\": 250\n}"
+              "raw": "{\n  \"name\": \"Invalid Product\",\n  \"model\": \"NOT_A_MODEL\",\n  \"price\": 250\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/products",
@@ -250,15 +190,10 @@
           "name": "Update Product",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"6A Switch Premium\",\n  \"category\": \"SWITCH\",\n  \"price\": 275\n}"
+              "raw": "{\n  \"name\": \"A Series Premium\",\n  \"model\": \"A_SERIES\",\n  \"price\": 275\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/products/{{productId1}}",
@@ -306,18 +241,9 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "customers"],
               "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "isActive",
-                  "value": "true"
-                }
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "isActive", "value": "true" }
               ]
             }
           },
@@ -333,18 +259,9 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "customers"],
               "query": [
-                {
-                  "key": "q",
-                  "value": "nadeem"
-                },
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
+                { "key": "q", "value": "nadeem" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
               ]
             }
           },
@@ -354,12 +271,7 @@
           "name": "Create Customer",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Nadeem\",\n  \"shop_name\": \"Nadeem Electric Store\",\n  \"address\": \"Gujrat\",\n  \"phone\": \"03001234567\",\n  \"notes\": \"Pays on weekends\"\n}"
@@ -389,12 +301,7 @@
           "name": "Update Customer",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"address\": \"Jalalpur Jattan, Gujrat\",\n  \"notes\": \"Prefers evening delivery\"\n}"
@@ -408,7 +315,30 @@
           "response": []
         },
         {
-          "name": "Delete Customer (Soft Delete)",
+          "name": "Set Opening Balance",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 15000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}/opening-balance",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "{{customerId}}",
+                "opening-balance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Customer (Hard Delete + Cascade)",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -445,14 +375,8 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "invoices"],
               "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
               ]
             }
           },
@@ -468,18 +392,27 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "invoices"],
               "query": [
-                {
-                  "key": "status",
-                  "value": "partial"
-                },
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
+                { "key": "status", "value": "partial" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Invoices By Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/invoices?customerId={{customerId}}&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "invoices"],
+              "query": [
+                { "key": "customerId", "value": "{{customerId}}" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
               ]
             }
           },
@@ -489,15 +422,10 @@
           "name": "Create Invoice",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"invoiceDate\": \"2026-03-03\",\n  \"discount\": 100,\n  \"notes\": \"first invoice\",\n  \"items\": [\n    { \"productId\": \"{{productId1}}\", \"quantity\": 2 },\n    { \"productId\": \"{{productId2}}\", \"quantity\": 1 }\n  ]\n}"
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"invoiceDate\": \"2026-03-07\",\n  \"discount\": 100,\n  \"notes\": \"first invoice\",\n  \"items\": [\n    { \"productId\": \"{{productId1}}\", \"quantity\": 2, \"boxQty\": 3 },\n    { \"productId\": \"{{productId2}}\", \"quantity\": 1 }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/invoices",
@@ -524,15 +452,10 @@
           "name": "Update Invoice",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"discount\": 50,\n  \"notes\": \"discount revised\",\n  \"items\": [\n    { \"productId\": \"{{productId1}}\", \"quantity\": 3 },\n    { \"productId\": \"{{productId2}}\", \"quantity\": 1 }\n  ]\n}"
+              "raw": "{\n  \"discount\": 50,\n  \"notes\": \"discount revised\",\n  \"items\": [\n    { \"productId\": \"{{productId1}}\", \"quantity\": 3, \"boxQty\": 2 },\n    { \"productId\": \"{{productId2}}\", \"quantity\": 1 }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}",
@@ -543,18 +466,43 @@
           "response": []
         },
         {
+          "name": "Delete Invoice",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "invoices", "{{invoiceId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Append Invoice Items",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"{{productId2}}\", \"quantity\": 5, \"boxQty\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "invoices", "{{invoiceId}}", "items"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Add Payment To Invoice",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"paymentDate\": \"2026-03-03\",\n  \"amount\": 500,\n  \"method\": \"CASH\",\n  \"reference\": \"\",\n  \"notes\": \"partial payment\"\n}"
+              "raw": "{\n  \"paymentDate\": \"2026-03-07\",\n  \"amount\": 500,\n  \"method\": \"CASH\",\n  \"reference\": \"\",\n  \"notes\": \"partial payment\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/invoices/{{invoiceId}}/payments",
@@ -578,7 +526,7 @@
           "response": []
         },
         {
-          "name": "Delete Payment",
+          "name": "Delete Invoice Payment",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -586,6 +534,209 @@
               "raw": "{{baseUrl}}/api/v1/invoices/payments/{{paymentId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "invoices", "payments", "{{paymentId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Payments By Invoice",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments?invoiceId={{invoiceId}}&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments"],
+              "query": [
+                { "key": "invoiceId", "value": "{{invoiceId}}" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Payments By Method",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments?method=CASH&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments"],
+              "query": [
+                { "key": "method", "value": "CASH" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"paymentDate\": \"2026-03-07\",\n  \"amount\": 1000,\n  \"method\": \"CASH\",\n  \"reference\": \"\",\n  \"notes\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Payment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/{{paymentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "{{paymentId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ledger Payments",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Ledger Payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ledger-payments?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ledger-payments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Ledger Payments By Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ledger-payments?customerId={{customerId}}&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ledger-payments"],
+              "query": [
+                { "key": "customerId", "value": "{{customerId}}" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Ledger Payment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ledger-payments/{{ledgerPaymentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ledger-payments", "{{ledgerPaymentId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Customer Ledger Payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}/ledger-payments",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "{{customerId}}",
+                "ledger-payments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Ledger Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000,\n  \"method\": \"CASH\",\n  \"paymentDate\": \"2026-03-07T00:00:00.000Z\",\n  \"notes\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}/ledger-payments",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "{{customerId}}",
+                "ledger-payments"
+              ]
             }
           },
           "response": []
@@ -606,14 +757,32 @@
       },
       "item": [
         {
-          "name": "Get Receivables Summary",
+          "name": "Get Dashboard Summary",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/summary/receivables",
+              "raw": "{{baseUrl}}/api/v1/summary/dashboard",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "summary", "receivables"]
+              "path": ["api", "v1", "summary", "dashboard"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Summary (With Filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/summary/dashboard?fromDate=2026-03-01&toDate=2026-03-31&overdueDays=7",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "summary", "dashboard"],
+              "query": [
+                { "key": "fromDate", "value": "2026-03-01" },
+                { "key": "toDate", "value": "2026-03-31" },
+                { "key": "overdueDays", "value": "7" }
+              ]
             }
           },
           "response": []
@@ -622,41 +791,15 @@
     }
   ],
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5000"
-    },
-    {
-      "key": "adminEmail",
-      "value": "admin@example.com"
-    },
-    {
-      "key": "adminPassword",
-      "value": "change_this_password"
-    },
-    {
-      "key": "adminToken",
-      "value": ""
-    },
-    {
-      "key": "customerId",
-      "value": ""
-    },
-    {
-      "key": "productId1",
-      "value": ""
-    },
-    {
-      "key": "productId2",
-      "value": ""
-    },
-    {
-      "key": "invoiceId",
-      "value": ""
-    },
-    {
-      "key": "paymentId",
-      "value": ""
-    }
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "adminPassword", "value": "change_this_password" },
+    { "key": "adminToken", "value": "" },
+    { "key": "customerId", "value": "" },
+    { "key": "productId1", "value": "" },
+    { "key": "productId2", "value": "" },
+    { "key": "invoiceId", "value": "" },
+    { "key": "paymentId", "value": "" },
+    { "key": "ledgerPaymentId", "value": "" }
   ]
 }

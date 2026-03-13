@@ -28,17 +28,29 @@ Production backend URL:
 
 ## Current endpoints
 
+### Health
 - `GET /api/v1/health`
+
+### Auth
 - `POST /api/v1/auth/login`
 - `GET /api/v1/auth/me`
-- `GET /api/v1/products/categories`
+
+### Products
+- `GET /api/v1/products/models`
 - `GET /api/v1/products`
 - `POST /api/v1/products`
+- `PATCH /api/v1/products/:id`
+- `DELETE /api/v1/products/:id`
+
+### Customers
 - `GET /api/v1/customers`
 - `POST /api/v1/customers`
 - `GET /api/v1/customers/:id`
 - `PATCH /api/v1/customers/:id`
+- `PATCH /api/v1/customers/:id/opening-balance`
 - `DELETE /api/v1/customers/:id`
+
+### Invoices
 - `GET /api/v1/invoices`
 - `POST /api/v1/invoices`
 - `GET /api/v1/invoices/:id`
@@ -49,11 +61,26 @@ Production backend URL:
 - `GET /api/v1/invoices/:id/payments`
 - `DELETE /api/v1/invoices/payments/:paymentId`
 
-Detailed frontend request/response guide:
+### Payments (Global)
+- `GET /api/v1/payments`
+- `POST /api/v1/payments`
+- `DELETE /api/v1/payments/:id`
+
+### Ledger Payments
+- `GET /api/v1/ledger-payments`
+- `DELETE /api/v1/ledger-payments/:id`
+- `GET /api/v1/customers/:customerId/ledger-payments`
+- `POST /api/v1/customers/:customerId/ledger-payments`
+
+### Summary
+- `GET /api/v1/summary/dashboard`
+
+Detailed request/response guide:
 - See `API_ENDPOINTS.md`
-  
+
 ## Notes
 
 - Money fields are integer-only (for example: `300`, not `300.00`).
-- Product `category` uses enum values from `src/constants/productCategories.ts`.
-- `products` and `customers` routes are admin-protected.
+- Product `model` uses enum values from `src/constants/productCategories.ts`: `A_SERIES | K_SERIES | R_SERIES | UNIQUE_SERIES`.
+- All business routes are admin-protected via `Authorization: Bearer <token>`.
+- Product delete is a soft delete (`is_active = false`); customer delete is a hard cascade delete.

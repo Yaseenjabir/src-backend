@@ -80,15 +80,16 @@ Money format:
 
 ## Products
 
-### GET `/products/categories`
+### GET `/products/models`
 
 - Auth: Yes
 - Request body: None
+- Returns the list of valid product model enum values.
 - Expected response:
 
 ```json
 {
-  "categories": ["BULB", "SWITCH", "SOCKET", "...", "OTHER"]
+  "models": ["A_SERIES", "K_SERIES", "R_SERIES", "UNIQUE_SERIES"]
 }
 ```
 
@@ -96,13 +97,12 @@ Money format:
 
 - Auth: Yes
 - Query params (all optional):
-  - `q` (string)
-  - `category` (enum)
+  - `q` (string — searches product name)
   - `isActive` (`true|false`)
-  - `page` (number string)
-  - `limit` (number string)
+  - `page` (number string, default `1`)
+  - `limit` (number string, default `20`, max `100`)
 - Example:
-  - `/products?q=switch&category=SWITCH&isActive=true&page=1&limit=20`
+  - `/products?q=series&isActive=true&page=1&limit=20`
 - Expected response:
 
 ```json
@@ -110,9 +110,9 @@ Money format:
   "items": [
     {
       "_id": "65f...",
-      "sku": "SWI-123456789",
-      "name": "6A SWITCH",
-      "category": "SWITCH",
+      "sku": "AS-123456789",
+      "name": "A SERIES 01",
+      "model": "A_SERIES",
       "price": 250,
       "is_active": true
     }
@@ -133,27 +133,30 @@ Money format:
 
 ```json
 {
-  "name": "6A Switch",
-  "category": "SWITCH",
+  "name": "A Series 01",
+  "model": "A_SERIES",
   "price": 250,
+  "sku": "AS-001",
   "is_active": true
 }
 ```
 
-- Notes:
-  - `sku` is optional; backend generates it if omitted.
-  - Backend stores `name` in uppercase.
-- Expected response: created product object.
+- Required: `name` (min 2 chars), `model`, `price` (integer ≥ 0)
+- `sku` is optional; backend auto-generates it if omitted.
+- `is_active` defaults to `true`.
+- `model` enum: `A_SERIES | K_SERIES | R_SERIES | UNIQUE_SERIES`
+- Backend stores `name` in uppercase.
+- Expected response (201): created product object.
 
 ### PATCH `/products/:id`
 
 - Auth: Yes
-- Request body (send only changed fields):
+- Request body (at least one field required):
 
 ```json
 {
-  "name": "6A Switch Premium",
-  "category": "SWITCH",
+  "name": "A Series Premium",
+  "model": "A_SERIES",
   "price": 275,
   "is_active": true
 }
@@ -165,7 +168,7 @@ Money format:
 
 - Auth: Yes
 - Request body: None
-- Behavior: soft delete (`is_active = false`)
+- Behavior: soft delete — sets `is_active = false`.
 - Expected response:
 
 ```json
@@ -188,8 +191,8 @@ Money format:
 - Query params (all optional):
   - `q` (searches `name`, `shop_name`, `phone`, `address`)
   - `isActive` (`true|false`)
-  - `page` (number string)
-  - `limit` (number string)
+  - `page` (number string, default `1`)
+  - `limit` (number string, default `20`, max `100`)
 - Expected response:
 
 ```json
@@ -202,7 +205,9 @@ Money format:
       "address": "Main Bazar, Gujrat",
       "phone": "03001234567",
       "notes": "...",
-      "is_active": true
+      "is_active": true,
+      "opening_balance": 0,
+      "opening_balance_set": false
     }
   ],
   "pagination": {
@@ -230,13 +235,19 @@ Money format:
 }
 ```
 
-- Required field: `name`
-- Expected response: created customer object.
+- Required: `name` (min 2 chars). All other fields optional.
+- Expected response (201): created customer object.
+
+### GET `/customers/:id`
+
+- Auth: Yes
+- Request body: None
+- Expected response: single customer object.
 
 ### PATCH `/customers/:id`
 
 - Auth: Yes
-- Request body (at least one field):
+- Request body (at least one field required):
 
 ```json
 {
@@ -251,20 +262,31 @@ Money format:
 
 - Expected response: updated customer object.
 
+### PATCH `/customers/:id/opening-balance`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "amount": 15000
+}
+```
+
+- Sets the customer's `opening_balance` (integer ≥ 0).
+- One-time operation — request is rejected if `opening_balance_set` is already `true`.
+- Expected response: updated customer object with `opening_balance_set: true`.
+
 ### DELETE `/customers/:id`
 
 - Auth: Yes
 - Request body: None
-- Behavior: soft delete (`is_active = false`) if no related invoices exist.
+- Behavior: **hard delete** — permanently removes the customer along with all their invoices, associated payments, and ledger payments.
 - Expected response:
 
 ```json
 {
-  "message": "Customer deactivated successfully",
-  "customer": {
-    "_id": "65f...",
-    "is_active": false
-  }
+  "message": "Customer and all related data deleted successfully"
 }
 ```
 
@@ -280,8 +302,8 @@ Money format:
   - `customerId` (ObjectId)
   - `fromDate` (date string)
   - `toDate` (date string)
-  - `page` (number string)
-  - `limit` (number string)
+  - `page` (number string, default `1`)
+  - `limit` (number string, default `20`)
 - Expected response:
 
 ```json
@@ -334,16 +356,18 @@ Money format:
 }
 ```
 
-- Required: `customerId`, `invoiceDate`, non-empty `items`; each item needs `productId` and `quantity > 0`
-- `unitPriceSnapshot` defaults to product's current price if omitted
-- `boxQty` is optional — stored per line item, does not affect pricing
+- Required: `customerId`, `invoiceDate`, `items` (non-empty array)
+- Each item requires `productId` and `quantity` (integer > 0)
+- `unitPriceSnapshot` optional — defaults to product's current price if omitted
+- `boxQty` optional — stored per line item, does not affect pricing
+- `discount` optional (integer ≥ 0, default `0`)
 - Expected response (201): created invoice object.
 
 ### GET `/invoices/:id`
 
 - Auth: Yes
 - Request body: None
-- Expected response: invoice object with populated `customer_id` and embedded `items` (each item includes `box_qty` if set).
+- Expected response: full invoice object with populated `customer_id` and embedded `items` array (each item includes `box_qty` if set).
 
 ### PATCH `/invoices/:id`
 
@@ -366,16 +390,16 @@ Money format:
 }
 ```
 
-- All fields optional; send only what changed
-- If `items` is provided it **replaces** the entire items list (min 1 item)
-- Business rule: new total cannot be less than already paid amount
+- All fields optional; send only what changed.
+- If `items` is provided it **replaces** the entire items list (min 1 item required).
+- Business rule: new `total_amount` cannot be less than the already `paid_amount`.
 - Expected response: updated invoice object.
 
 ### DELETE `/invoices/:id`
 
 - Auth: Yes
 - Request body: None
-- Behavior: hard deletes invoice and all associated payments.
+- Behavior: hard delete — removes invoice and all associated payments.
 - Expected response:
 
 ```json
@@ -403,8 +427,8 @@ Money format:
 }
 ```
 
-- Appends new items to the existing invoice items list; does not replace existing items
-- Recalculates `subtotal`, `total_amount`, `remaining_amount`, and `status`
+- Appends new items to the existing invoice — does **not** replace existing items.
+- Recalculates `subtotal`, `total_amount`, `remaining_amount`, and `status`.
 - Expected response: updated invoice object.
 
 ### POST `/invoices/:id/payments`
@@ -422,7 +446,9 @@ Money format:
 }
 ```
 
-- `method` enum: `CASH | BANK | OTHER`
+- Required: `paymentDate`, `amount` (integer > 0)
+- `method` enum: `CASH | BANK | OTHER` (optional, defaults to `CASH`)
+- Business rules: rejected if invoice is already fully paid, or if amount exceeds remaining balance.
 - Expected response:
 
 ```json
@@ -492,7 +518,9 @@ Money format:
 
 ---
 
-## Payments
+## Payments (Global)
+
+These endpoints operate on payments across all invoices.
 
 ### GET `/payments`
 
@@ -502,8 +530,8 @@ Money format:
   - `method` (`CASH|BANK|OTHER`)
   - `fromDate` (date string)
   - `toDate` (date string)
-  - `page` (number string)
-  - `limit` (number string)
+  - `page` (number string, default `1`)
+  - `limit` (number string, default `20`)
 - Expected response:
 
 ```json
@@ -516,7 +544,7 @@ Money format:
       "method": "CASH",
       "invoice_id": {
         "_id": "65i...",
-        "invoice_no": "INV-...",
+        "invoice_no": "1234",
         "total_amount": 3000,
         "remaining_amount": 2000,
         "status": "partial",
@@ -554,6 +582,8 @@ Money format:
 }
 ```
 
+- Required: `invoiceId`, `paymentDate`, `amount` (integer > 0)
+- `method` enum: `CASH | BANK | OTHER` (optional, defaults to `CASH`)
 - Expected response:
 
 ```json
@@ -573,6 +603,117 @@ Money format:
   }
 }
 ```
+
+### DELETE `/payments/:id`
+
+- Auth: Yes
+- Request body: None
+- Behavior: deletes the payment and recalculates the invoice's `paid_amount`, `remaining_amount`, and `status`.
+- Expected response:
+
+```json
+{
+  "message": "Payment deleted successfully",
+  "invoice": {
+    "_id": "65i...",
+    "paid_amount": 0,
+    "remaining_amount": 3000,
+    "status": "unpaid"
+  }
+}
+```
+
+---
+
+## Ledger Payments
+
+Ledger payments are customer-level account payments (not tied to a specific invoice). They represent money collected from a customer against their overall outstanding balance.
+
+### GET `/ledger-payments`
+
+- Auth: Yes
+- Query params (all optional):
+  - `customerId` (ObjectId)
+  - `method` (`CASH|BANK|OTHER`)
+  - `page` (number string, default `1`)
+  - `limit` (number string, default `20`)
+- Expected response:
+
+```json
+{
+  "items": [
+    {
+      "_id": "65lp...",
+      "customer_id": "65c...",
+      "payment_date": "2026-03-07T00:00:00.000Z",
+      "amount": 5000,
+      "method": "CASH",
+      "notes": "Optional"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### DELETE `/ledger-payments/:id`
+
+- Auth: Yes
+- Request body: None
+- Behavior: hard deletes the ledger payment record.
+- Expected response:
+
+```json
+{
+  "message": "Ledger payment deleted successfully"
+}
+```
+
+### GET `/customers/:customerId/ledger-payments`
+
+- Auth: Yes
+- Request body: None
+- Returns all ledger payments for a specific customer, sorted ascending by `payment_date`.
+- Expected response:
+
+```json
+{
+  "items": [
+    {
+      "_id": "65lp...",
+      "customer_id": "65c...",
+      "payment_date": "2026-03-07T00:00:00.000Z",
+      "amount": 5000,
+      "method": "CASH",
+      "notes": "Optional"
+    }
+  ]
+}
+```
+
+### POST `/customers/:customerId/ledger-payments`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "amount": 5000,
+  "method": "CASH",
+  "paymentDate": "2026-03-07T00:00:00.000Z",
+  "notes": "Optional"
+}
+```
+
+- Required: `amount` (integer ≥ 1), `method`
+- `method` enum: `CASH | BANK | OTHER`
+- `paymentDate` optional (ISO datetime string)
+- Business rule: rejected if payment amount exceeds the customer's remaining balance (`opening_balance + sum(invoice totals) - sum(existing ledger payments)`).
+- Expected response (201): created ledger payment object.
 
 ---
 
@@ -615,20 +756,23 @@ Money format:
 
 ---
 
-## Common validation/error notes
+## Common validation / error notes
 
-- ObjectIds must be valid MongoDB IDs.
-- Date fields must be valid date strings.
+- ObjectIds must be valid 24-character hex MongoDB IDs.
+- Date fields must be valid date strings parseable by `new Date()`.
 - `page` / `limit` are numeric strings in query params.
-- Typical error format:
+- Money fields (`price`, `discount`, `unitPriceSnapshot`, `amount`, `opening_balance`) must be integers — decimals are rejected.
+- Typical error response format:
 
 ```json
 {
   "success": false,
   "error": {
     "code": "BAD_REQUEST",
-    "message": "...",
+    "message": "Request validation failed",
     "details": {}
   }
 }
 ```
+
+Error codes: `BAD_REQUEST` | `UNAUTHORIZED` | `FORBIDDEN` | `NOT_FOUND` | `CONFLICT` | `UNPROCESSABLE_ENTITY` | `INTERNAL_SERVER_ERROR`
