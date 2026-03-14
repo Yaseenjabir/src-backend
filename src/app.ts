@@ -1,8 +1,4 @@
-import express, {
-  type Request,
-  type RequestHandler,
-  type Response,
-} from "express";
+import express, { type RequestHandler } from "express";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";

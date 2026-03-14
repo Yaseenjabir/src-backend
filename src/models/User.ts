@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
-export type UserRole = "admin";
+type UserRole = "admin";
 
-export interface IUser {
+interface IUser {
   name: string;
   email: string;
   password_hash: string;

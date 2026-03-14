@@ -2,8 +2,6 @@ import { Router } from "express";
 import {
   listLedgerPayments,
   deleteLedgerPayment,
-} from "../controllers/ledgerPayment.controller.js";
-import {
   listCustomerLedgerPayments,
   createLedgerPayment,
 } from "../controllers/ledgerPayment.controller.js";

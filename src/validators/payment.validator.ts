@@ -29,15 +29,3 @@ export const createPaymentBodySchema = z.object({
 export const paymentIdParamsSchema = z.object({
   id: objectIdSchema,
 });
-
-export const updatePaymentBodySchema = z
-  .object({
-    paymentDate: dateStringSchema.optional(),
-    amount: z.number().int().positive().optional(),
-    method: z.enum(["CASH", "BANK", "OTHER"]).optional(),
-    reference: z.string().trim().optional(),
-    notes: z.string().trim().optional(),
-  })
-  .refine((value) => Object.keys(value).length > 0, {
-    message: "At least one field is required",
-  });
