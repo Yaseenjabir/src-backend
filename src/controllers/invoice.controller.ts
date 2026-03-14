@@ -57,29 +57,27 @@ function deriveStatus(totalAmount: number, paidAmount: number): InvoiceStatus {
   return "completed";
 }
 
-function generateInvoiceNoCandidate(): string {
-  const random4Digit = Math.floor(1000 + Math.random() * 9000)
-    .toString()
-    .padStart(4, "0");
-  return random4Digit;
-}
-
 async function generateInvoiceNo(): Promise<string> {
-  const maxAttempts = 50;
+  const result = await Invoice.aggregate([
+    {
+      $group: {
+        _id: null,
+        maxNo: {
+          $max: {
+            $convert: {
+              input: "$invoice_no",
+              to: "int",
+              onError: 0,
+              onNull: 0,
+            },
+          },
+        },
+      },
+    },
+  ]);
 
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const candidate = generateInvoiceNoCandidate();
-    const existing = await Invoice.exists({ invoice_no: candidate });
-    if (!existing) {
-      return candidate;
-    }
-  }
-
-  throw new AppError(
-    500,
-    "INTERNAL_SERVER_ERROR",
-    "Unable to generate unique 4-digit invoice UID",
-  );
+  const nextNo = (result[0]?.maxNo ?? 0) + 1;
+  return `0${nextNo}`;
 }
 
 async function getInvoicePaidAmount(invoiceId: string): Promise<number> {
@@ -195,7 +193,10 @@ async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
       unit_price_snapshot: unitPrice,
       quantity,
       line_total: lineTotal,
-      box_qty: item.boxQty !== undefined ? assertInteger(item.boxQty, `items[${index}].boxQty`) : undefined,
+      box_qty:
+        item.boxQty !== undefined
+          ? assertInteger(item.boxQty, `items[${index}].boxQty`)
+          : undefined,
     };
   });
 
