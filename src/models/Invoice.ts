@@ -18,6 +18,10 @@ const invoiceItemSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    model_snapshot: {
+      type: String,
+      trim: true,
+    },
     unit_price_snapshot: {
       type: Number,
       required: true,

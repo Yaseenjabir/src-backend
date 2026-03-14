@@ -190,6 +190,7 @@ async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
       product_id: product._id,
       product_name_snapshot: product.name,
       sku_snapshot: product.sku,
+      model_snapshot: product.model,
       unit_price_snapshot: unitPrice,
       quantity,
       line_total: lineTotal,
