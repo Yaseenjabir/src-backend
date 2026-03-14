@@ -130,7 +130,7 @@ async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
 
   const products = await Product.find({
     _id: { $in: productIds },
-    is_active: true,
+    is_active: { $ne: false },
   });
 
   const productMap = new Map(
