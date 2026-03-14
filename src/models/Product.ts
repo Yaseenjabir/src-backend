@@ -29,10 +29,6 @@ const productSchema = new mongoose.Schema(
         message: "price must be a whole integer",
       },
     },
-    is_active: {
-      type: Boolean,
-      default: true,
-    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },

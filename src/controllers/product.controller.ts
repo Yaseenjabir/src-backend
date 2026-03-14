@@ -51,7 +51,6 @@ export async function createProduct(req: Request, res: Response) {
     name: string;
     model: string;
     price: number;
-    is_active?: boolean;
   };
 
   payload.sku = payload.sku?.trim().toUpperCase();
@@ -68,19 +67,16 @@ export async function createProduct(req: Request, res: Response) {
 export async function listProducts(req: Request, res: Response) {
   const {
     q,
-    isActive = "true",
     page = "1",
     limit = "20",
   } = req.query;
 
-  const filter: Record<string, unknown> = {};
+  const filter: Record<string, unknown> = {
+    is_active: { $ne: false },
+  };
 
   if (typeof q === "string" && q) {
     filter.name = { $regex: q, $options: "i" };
-  }
-
-  if (isActive === "true" || isActive === "false") {
-    filter.is_active = isActive === "true";
   }
 
   const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
@@ -112,7 +108,7 @@ export async function updateProduct(req: Request, res: Response) {
   const { id } = req.params;
   assertValidObjectId(id);
 
-  const allowedFields = ["name", "model", "price", "is_active"];
+  const allowedFields = ["name", "model", "price"];
   const payload = Object.fromEntries(
     Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
   );
@@ -137,15 +133,11 @@ export async function deleteProduct(req: Request, res: Response) {
   const { id } = req.params;
   assertValidObjectId(id);
 
-  const product = await Product.findByIdAndUpdate(
-    id,
-    { is_active: false },
-    { new: true, runValidators: true },
-  );
+  const product = await Product.findByIdAndDelete(id);
 
   if (!product) {
     throw new AppError(404, "NOT_FOUND", "Product not found");
   }
 
-  return res.json({ message: "Product deactivated successfully", product });
+  return res.json({ message: "Product deleted successfully" });
 }
