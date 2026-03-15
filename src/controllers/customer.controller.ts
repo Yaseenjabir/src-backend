@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import Customer from "../models/Customer.js";
 import Invoice from "../models/Invoice.js";
 import LedgerPayment from "../models/LedgerPayment.js";
-import Payment from "../models/Payment.js";
 import { AppError } from "../utils/AppError.js";
 
 function assertValidObjectId(id: string): void {
@@ -137,12 +136,7 @@ export async function deleteCustomer(req: Request, res: Response) {
     throw new AppError(404, "NOT_FOUND", "Customer not found");
   }
 
-  // Get all invoice IDs for this customer so we can delete their payments
-  const invoices = await Invoice.find({ customer_id: id }, "_id");
-  const invoiceIds = invoices.map((inv) => inv._id);
-
   await Promise.all([
-    Payment.deleteMany({ invoice_id: { $in: invoiceIds } }),
     Invoice.deleteMany({ customer_id: id }),
     LedgerPayment.deleteMany({ customer_id: id }),
   ]);

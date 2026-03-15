@@ -1,24 +1,19 @@
 import { Router } from "express";
 import {
-  addInvoicePayment,
   appendInvoiceItems,
   createInvoice,
   deleteInvoice,
-  deletePayment,
   getInvoiceById,
   listInvoices,
-  listInvoicePayments,
   updateInvoice,
 } from "../controllers/invoice.controller.js";
 import { validateRequest } from "../middlewares/validateRequest.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
-  addInvoicePaymentBodySchema,
   appendItemsBodySchema,
   createInvoiceBodySchema,
   invoiceIdParamsSchema,
   listInvoicesQuerySchema,
-  paymentIdParamsSchema,
   updateInvoiceBodySchema,
 } from "../validators/invoice.validator.js";
 
@@ -56,21 +51,4 @@ router.post(
   validateRequest(appendItemsBodySchema),
   asyncHandler(appendInvoiceItems),
 );
-router.post(
-  "/:id/payments",
-  validateRequest(invoiceIdParamsSchema, "params"),
-  validateRequest(addInvoicePaymentBodySchema),
-  asyncHandler(addInvoicePayment),
-);
-router.get(
-  "/:id/payments",
-  validateRequest(invoiceIdParamsSchema, "params"),
-  asyncHandler(listInvoicePayments),
-);
-router.delete(
-  "/payments/:paymentId",
-  validateRequest(paymentIdParamsSchema, "params"),
-  asyncHandler(deletePayment),
-);
-
 export default router;

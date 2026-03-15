@@ -3,12 +3,15 @@ import mongoose from "mongoose";
 import { connectDB } from "../config/db.js";
 import Customer from "../models/Customer.js";
 import Product from "../models/Product.js";
-import {
-  PRODUCT_MODELS,
-  type ProductModel,
-} from "../constants/productCategories.js";
 
 dotenv.config();
+
+const PRODUCT_MODEL_LABELS = [
+  "A Series",
+  "K Series",
+  "R Series",
+  "Unique Series",
+] as const;
 
 const PRODUCT_COUNT = 50;
 const CUSTOMER_COUNT = 10;
@@ -172,9 +175,9 @@ function buildCustomer(index: number) {
   };
 }
 
-function buildProductName(category: ProductModel, index: number): string {
+function buildProductName(category: string, index: number): string {
   const seq = (index + 1).toString().padStart(2, "0");
-  return `${category.replace(/_/g, " ")} ${seq}`;
+  return `${category} ${seq}`;
 }
 
 function randomPriceFromSlabs(): number {
@@ -186,7 +189,7 @@ async function seedProducts() {
   const products = [];
 
   for (let i = 0; i < PRODUCT_COUNT; i += 1) {
-    const category = PRODUCT_MODELS[i % PRODUCT_MODELS.length];
+    const category = PRODUCT_MODEL_LABELS[i % PRODUCT_MODEL_LABELS.length];
     const sku = await generateProductSku(category);
 
     products.push({

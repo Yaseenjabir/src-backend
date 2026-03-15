@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
-import { PRODUCT_MODELS } from "../constants/productCategories.js";
+import ProductModelDoc from "../models/ProductModel.js";
 import { AppError } from "../utils/AppError.js";
 
 function assertValidObjectId(id: string): void {
@@ -10,18 +10,9 @@ function assertValidObjectId(id: string): void {
   }
 }
 
-function modelPrefix(model: string): string {
-  const map: Record<string, string> = {
-    A_SERIES: "AS",
-    K_SERIES: "KS",
-    R_SERIES: "RS",
-    UNIQUE_SERIES: "US",
-  };
-  return map[model] ?? "PR";
-}
-
-async function generateProductSku(model: string): Promise<string> {
-  const prefix = modelPrefix(model);
+async function generateProductSku(modelLabel: string): Promise<string> {
+  const pm = await ProductModelDoc.findOne({ label: modelLabel });
+  const prefix = pm?.sku_prefix ?? "PR";
 
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const stamp = Date.now().toString().slice(-6);
@@ -39,10 +30,6 @@ async function generateProductSku(model: string): Promise<string> {
     "INTERNAL_SERVER_ERROR",
     "Unable to generate product sku",
   );
-}
-
-export async function getProductModels(req: Request, res: Response) {
-  return res.json({ models: PRODUCT_MODELS });
 }
 
 export async function createProduct(req: Request, res: Response) {

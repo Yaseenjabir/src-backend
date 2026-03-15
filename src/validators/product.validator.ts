@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { PRODUCT_MODELS } from "../constants/productCategories.js";
 
 const objectIdSchema = z
   .string()
@@ -12,7 +11,7 @@ export const productIdParamsSchema = z.object({
 export const createProductBodySchema = z.object({
   sku: z.string().trim().min(1).optional(),
   name: z.string().trim().min(2),
-  model: z.enum(PRODUCT_MODELS),
+  model: z.string().trim().min(1),
   price: z.number().int().nonnegative(),
   is_active: z.boolean().optional(),
 });
@@ -20,7 +19,7 @@ export const createProductBodySchema = z.object({
 export const updateProductBodySchema = z
   .object({
     name: z.string().trim().min(2).optional(),
-    model: z.enum(PRODUCT_MODELS).optional(),
+    model: z.string().trim().min(1).optional(),
     price: z.number().int().nonnegative().optional(),
     is_active: z.boolean().optional(),
   })

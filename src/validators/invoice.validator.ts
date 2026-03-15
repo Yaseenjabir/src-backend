@@ -20,10 +20,6 @@ export const invoiceIdParamsSchema = z.object({
   id: objectIdSchema,
 });
 
-export const paymentIdParamsSchema = z.object({
-  paymentId: objectIdSchema,
-});
-
 export const createInvoiceBodySchema = z.object({
   customerId: objectIdSchema,
   invoiceDate: dateStringSchema,
@@ -54,12 +50,4 @@ export const listInvoicesQuerySchema = z.object({
 
 export const appendItemsBodySchema = z.object({
   items: z.array(invoiceItemSchema).min(1),
-});
-
-export const addInvoicePaymentBodySchema = z.object({
-  paymentDate: dateStringSchema,
-  amount: z.number().int().positive(),
-  method: z.enum(["CASH", "BANK", "OTHER"]).optional(),
-  reference: z.string().trim().optional(),
-  notes: z.string().trim().optional(),
 });
