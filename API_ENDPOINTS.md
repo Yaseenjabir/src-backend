@@ -78,31 +78,82 @@ Money format:
 
 ---
 
-## Products
+## Product Models
 
-### GET `/products/models`
+### GET `/product-models`
 
 - Auth: Yes
 - Request body: None
-- Returns the list of valid product model enum values.
+- Returns all product models (used to populate model pickers in the app).
 - Expected response:
 
 ```json
 {
-  "models": ["A_SERIES", "K_SERIES", "R_SERIES", "UNIQUE_SERIES"]
+  "items": [
+    {
+      "_id": "65f...",
+      "label": "A Series",
+      "sku_prefix": "AS"
+    }
+  ]
 }
 ```
+
+### POST `/product-models`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "label": "A Series"
+}
+```
+
+- Required: `label` (non-empty string).
+- `sku_prefix` is auto-derived from label initials — never sent by the client.
+- Expected response (201): created product model object.
+
+### PATCH `/product-models/:id`
+
+- Auth: Yes
+- Request body:
+
+```json
+{
+  "label": "Alpha Series"
+}
+```
+
+- Updates `label`; `sku_prefix` is automatically recalculated from the new label.
+- Expected response: updated product model object.
+
+### DELETE `/product-models/:id`
+
+- Auth: Yes
+- Request body: None
+- Behavior: hard delete.
+- Expected response:
+
+```json
+{
+  "message": "Product model deleted successfully"
+}
+```
+
+---
+
+## Products
 
 ### GET `/products`
 
 - Auth: Yes
 - Query params (all optional):
   - `q` (string — searches product name)
-  - `isActive` (`true|false`)
   - `page` (number string, default `1`)
   - `limit` (number string, default `20`, max `100`)
 - Example:
-  - `/products?q=series&isActive=true&page=1&limit=20`
+  - `/products?q=fan&page=1&limit=20`
 - Expected response:
 
 ```json
@@ -111,16 +162,25 @@ Money format:
     {
       "_id": "65f...",
       "sku": "AS-123456789",
-      "name": "A SERIES 01",
-      "model": "A_SERIES",
-      "price": 250,
+      "name": "FAN",
+      "type": "model",
+      "model": "A Series",
+      "price": 500,
+      "is_active": true
+    },
+    {
+      "_id": "65f...",
+      "sku": "PR-987654321",
+      "name": "SWITCH SOCKET",
+      "type": "direct",
+      "price": 150,
       "is_active": true
     }
   ],
   "pagination": {
     "page": 1,
     "limit": 20,
-    "total": 1,
+    "total": 2,
     "totalPages": 1
   }
 }
@@ -128,23 +188,34 @@ Money format:
 
 ### POST `/products`
 
-- Auth: Yes
-- Request body:
+Two shapes depending on `type`:
+
+**Direct product** (name + price only):
 
 ```json
 {
-  "name": "A Series 01",
-  "model": "A_SERIES",
-  "price": 250,
-  "sku": "AS-001",
-  "is_active": true
+  "type": "direct",
+  "name": "Switch Socket",
+  "price": 150
 }
 ```
 
-- Required: `name` (min 2 chars), `model`, `price` (integer ≥ 0)
+**Model-based product** (name + model + price):
+
+```json
+{
+  "type": "model",
+  "name": "Fan",
+  "model": "A Series",
+  "price": 500
+}
+```
+
+- Auth: Yes
+- Required fields:
+  - Both types: `type`, `name` (min 2 chars), `price` (integer ≥ 0)
+  - `"model"` type only: `model` (non-empty string matching a product model label)
 - `sku` is optional; backend auto-generates it if omitted.
-- `is_active` defaults to `true`.
-- `model` enum: `A_SERIES | K_SERIES | R_SERIES | UNIQUE_SERIES`
 - Backend stores `name` in uppercase.
 - Expected response (201): created product object.
 
@@ -155,29 +226,25 @@ Money format:
 
 ```json
 {
-  "name": "A Series Premium",
-  "model": "A_SERIES",
-  "price": 275,
-  "is_active": true
+  "name": "Fan Premium",
+  "model": "A Series",
+  "price": 550
 }
 ```
 
+- Updatable fields: `name`, `model`, `price`. `type` is not updatable.
 - Expected response: updated product object.
 
 ### DELETE `/products/:id`
 
 - Auth: Yes
 - Request body: None
-- Behavior: soft delete — sets `is_active = false`.
+- Behavior: hard delete — permanently removes the product.
 - Expected response:
 
 ```json
 {
-  "message": "Product deactivated successfully",
-  "product": {
-    "_id": "65f...",
-    "is_active": false
-  }
+  "message": "Product deleted successfully"
 }
 ```
 
@@ -281,7 +348,7 @@ Money format:
 
 - Auth: Yes
 - Request body: None
-- Behavior: **hard delete** — permanently removes the customer along with all their invoices, associated payments, and ledger payments.
+- Behavior: **hard delete** — permanently removes the customer along with all their invoices and ledger payments.
 - Expected response:
 
 ```json
@@ -399,13 +466,12 @@ Money format:
 
 - Auth: Yes
 - Request body: None
-- Behavior: hard delete — removes invoice and all associated payments.
+- Behavior: hard delete — removes the invoice document.
 - Expected response:
 
 ```json
 {
-  "message": "Invoice and associated payments deleted successfully",
-  "deleted_payments": 2
+  "message": "Invoice deleted successfully"
 }
 ```
 
@@ -430,198 +496,6 @@ Money format:
 - Appends new items to the existing invoice — does **not** replace existing items.
 - Recalculates `subtotal`, `total_amount`, `remaining_amount`, and `status`.
 - Expected response: updated invoice object.
-
-### POST `/invoices/:id/payments`
-
-- Auth: Yes
-- Request body:
-
-```json
-{
-  "paymentDate": "2026-03-07",
-  "amount": 1000,
-  "method": "CASH",
-  "reference": "Optional",
-  "notes": "Optional"
-}
-```
-
-- Required: `paymentDate`, `amount` (integer > 0)
-- `method` enum: `CASH | BANK | OTHER` (optional, defaults to `CASH`)
-- Business rules: rejected if invoice is already fully paid, or if amount exceeds remaining balance.
-- Expected response:
-
-```json
-{
-  "payment": {
-    "_id": "65p...",
-    "invoice_id": "65i...",
-    "payment_date": "2026-03-07T00:00:00.000Z",
-    "amount": 1000,
-    "method": "CASH"
-  },
-  "invoice": {
-    "_id": "65i...",
-    "paid_amount": 1000,
-    "remaining_amount": 2000,
-    "status": "partial"
-  }
-}
-```
-
-### GET `/invoices/:id/payments`
-
-- Auth: Yes
-- Request body: None
-- Expected response:
-
-```json
-{
-  "invoice": {
-    "_id": "65i...",
-    "invoice_no": "1234",
-    "total_amount": 3000,
-    "paid_amount": 1000,
-    "remaining_amount": 2000,
-    "status": "partial"
-  },
-  "payments": [
-    {
-      "_id": "65p...",
-      "invoice_id": "65i...",
-      "payment_date": "2026-03-07T00:00:00.000Z",
-      "amount": 1000,
-      "method": "CASH"
-    }
-  ]
-}
-```
-
-### DELETE `/invoices/payments/:paymentId`
-
-- Auth: Yes
-- Request body: None
-- Behavior: deletes the payment and recalculates the invoice's `paid_amount`, `remaining_amount`, and `status`.
-- Expected response:
-
-```json
-{
-  "message": "Payment deleted successfully",
-  "invoice": {
-    "_id": "65i...",
-    "paid_amount": 0,
-    "remaining_amount": 3000,
-    "status": "unpaid"
-  }
-}
-```
-
----
-
-## Payments (Global)
-
-These endpoints operate on payments across all invoices.
-
-### GET `/payments`
-
-- Auth: Yes
-- Query params (all optional):
-  - `invoiceId` (ObjectId)
-  - `method` (`CASH|BANK|OTHER`)
-  - `fromDate` (date string)
-  - `toDate` (date string)
-  - `page` (number string, default `1`)
-  - `limit` (number string, default `20`)
-- Expected response:
-
-```json
-{
-  "items": [
-    {
-      "_id": "65p...",
-      "payment_date": "2026-03-07T00:00:00.000Z",
-      "amount": 1000,
-      "method": "CASH",
-      "invoice_id": {
-        "_id": "65i...",
-        "invoice_no": "1234",
-        "total_amount": 3000,
-        "remaining_amount": 2000,
-        "status": "partial",
-        "customer_id": {
-          "_id": "65c...",
-          "name": "Ali Khan",
-          "shop_name": "Royal Electronics",
-          "phone": "03001234567"
-        }
-      }
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 1,
-    "totalPages": 1
-  }
-}
-```
-
-### POST `/payments`
-
-- Auth: Yes
-- Request body:
-
-```json
-{
-  "invoiceId": "65i...",
-  "paymentDate": "2026-03-07",
-  "amount": 1000,
-  "method": "BANK",
-  "reference": "TRX-123",
-  "notes": "Optional"
-}
-```
-
-- Required: `invoiceId`, `paymentDate`, `amount` (integer > 0)
-- `method` enum: `CASH | BANK | OTHER` (optional, defaults to `CASH`)
-- Expected response:
-
-```json
-{
-  "payment": {
-    "_id": "65p...",
-    "invoice_id": "65i...",
-    "payment_date": "2026-03-07T00:00:00.000Z",
-    "amount": 1000,
-    "method": "BANK"
-  },
-  "invoice": {
-    "_id": "65i...",
-    "paid_amount": 1000,
-    "remaining_amount": 2000,
-    "status": "partial"
-  }
-}
-```
-
-### DELETE `/payments/:id`
-
-- Auth: Yes
-- Request body: None
-- Behavior: deletes the payment and recalculates the invoice's `paid_amount`, `remaining_amount`, and `status`.
-- Expected response:
-
-```json
-{
-  "message": "Payment deleted successfully",
-  "invoice": {
-    "_id": "65i...",
-    "paid_amount": 0,
-    "remaining_amount": 3000,
-    "status": "unpaid"
-  }
-}
-```
 
 ---
 

@@ -14,9 +14,15 @@ const productSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    type: {
+      type: String,
+      enum: ["direct", "model"],
+      required: true,
+      default: "model",
+    },
     model: {
       type: String,
-      required: true,
+      required: false,
     },
     price: {
       type: Number,

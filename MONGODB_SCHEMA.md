@@ -8,7 +8,8 @@
   "_id": "ObjectId",
   "sku": "AS-123456001",
   "name": "A SERIES 01",
-  "model": "A_SERIES",
+  "type": "model",
+  "model": "A Series",
   "price": 300,
   "is_active": true,
   "created_at": "ISODate",
@@ -16,18 +17,50 @@
 }
 ```
 
-`model` enum (fixed master list):
-- `A_SERIES`
-- `K_SERIES`
-- `R_SERIES`
-- `UNIQUE_SERIES`
+Direct product example (no `model` field):
+```json
+{
+  "_id": "ObjectId",
+  "sku": "PR-123456001",
+  "name": "SWITCH SOCKET",
+  "type": "direct",
+  "price": 150,
+  "is_active": true,
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
+}
+```
 
-SKU is auto-generated as `<PREFIX>-<6-digit-timestamp><3-digit-random>` if not provided on create.
-Product `name` is stored in uppercase.
+`type` enum: `"direct" | "model"`
+
+- `type: "direct"` — name and price only. No `model` field.
+- `type: "model"` — requires `model` string (free-text label referencing a product model).
+- SKU is auto-generated as `<PREFIX>-<6-digit-timestamp><3-digit-random>` if not provided on create.
+  - Prefix is looked up from `product_models` by `label` when `type === "model"`.
+  - Prefix defaults to `"PR"` for `type === "direct"`.
+- Product `name` is stored in uppercase.
+- The compound unique index `{ name: 1, model: 1 }` enforces uniqueness for both types naturally.
 
 ---
 
-### 2) customers
+### 2) product_models
+```json
+{
+  "_id": "ObjectId",
+  "label": "A Series",
+  "sku_prefix": "AS",
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
+}
+```
+
+- `label`: human-readable model name (e.g. `"A Series"`, `"Unique Series"`).
+- `sku_prefix`: auto-derived from label initials — first letter of each word, uppercase, max 3 chars (e.g. `"A Series"` → `"AS"`, `"Unique Series"` → `"US"`). Never entered by the user.
+- `label` is unique.
+
+---
+
+### 3) customers
 ```json
 {
   "_id": "ObjectId",
@@ -49,7 +82,7 @@ Product `name` is stored in uppercase.
 
 ---
 
-### 3) invoices (with embedded `items`)
+### 4) invoices (with embedded `items`)
 ```json
 {
   "_id": "ObjectId",
@@ -59,9 +92,9 @@ Product `name` is stored in uppercase.
   "subtotal": 9500,
   "discount": 500,
   "total_amount": 9000,
-  "paid_amount": 4000,
-  "remaining_amount": 5000,
-  "status": "partial",
+  "paid_amount": 0,
+  "remaining_amount": 9000,
+  "status": "unpaid",
   "notes": "",
   "items": [
     {
@@ -82,25 +115,7 @@ Product `name` is stored in uppercase.
 
 - `box_qty` is optional per line item — informational only, does not affect pricing.
 - `status` enum: `unpaid | partial | completed`
-
----
-
-### 4) payments
-```json
-{
-  "_id": "ObjectId",
-  "invoice_id": "ObjectId",
-  "payment_date": "ISODate",
-  "amount": 1000,
-  "method": "CASH",
-  "reference": "",
-  "notes": "",
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
-}
-```
-
-- `method` enum: `CASH | BANK | OTHER`
+- `paid_amount` is updated directly on the invoice document (no separate payments collection).
 
 ---
 
@@ -128,11 +143,11 @@ Product `name` is stored in uppercase.
 
 - `products`: `{ sku: 1 }` unique
 - `products`: `{ name: 1, model: 1 }` compound unique
+- `product_models`: `{ label: 1 }` unique
 - `customers`: `{ phone: 1 }`
 - `invoices`: `{ invoice_no: 1 }` unique
 - `invoices`: `{ customer_id: 1, status: 1 }` compound
 - `invoices`: `{ invoice_date: -1 }`
-- `payments`: `{ invoice_id: 1, payment_date: -1 }` compound
 - `ledger_payments`: `{ customer_id: 1, payment_date: -1 }` compound
 
 ---
@@ -143,7 +158,7 @@ Product `name` is stored in uppercase.
 - `line_total = quantity × unit_price_snapshot`
 - `subtotal = sum(items.line_total)`
 - `total_amount = subtotal - discount`
-- `paid_amount = sum(payments.amount where payments.invoice_id = invoice._id)`
+- `paid_amount` tracked directly on invoice
 - `remaining_amount = total_amount - paid_amount`
 
 ### Invoice status derivation
@@ -151,19 +166,15 @@ Product `name` is stored in uppercase.
 - `partial` if `0 < paid_amount < total_amount`
 - `completed` if `paid_amount >= total_amount`
 
-### Payment constraints
-- Payment amount must be > 0 and must not exceed `remaining_amount`.
-- Deleting a payment triggers recalculation of `paid_amount`, `remaining_amount`, and `status`.
-
 ### Ledger payment balance validation
 - Customer remaining balance = `opening_balance + sum(invoice total_amounts) - sum(existing ledger payments)`
 - A new ledger payment is rejected if its amount exceeds this balance.
 
 ### Customer delete
-- Hard delete — permanently removes the customer plus all their invoices, all associated invoice payments, and all ledger payments.
+- Hard delete — permanently removes the customer plus all their invoices and all ledger payments.
 
 ### Product delete
-- Soft delete only — sets `is_active = false`.
+- Hard delete — permanently removes the product document.
 
 ### Opening balance
 - One-time settable per customer via `PATCH /customers/:id/opening-balance`.
@@ -173,8 +184,9 @@ Product `name` is stored in uppercase.
 
 ## Product Validation Rules
 
+- `type`: required, must be `"direct"` or `"model"`. Not updatable after creation.
 - `sku`: optional on create (auto-generated if omitted), unique, uppercase.
 - `name`: required, min 2 chars, stored uppercase.
-- `model`: required, must be one of `A_SERIES | K_SERIES | R_SERIES | UNIQUE_SERIES`.
+- `model`: required when `type === "model"`, must be a non-empty string. Omitted when `type === "direct"`.
 - `price`: required, integer ≥ 0.
 - `is_active`: defaults to `true`.

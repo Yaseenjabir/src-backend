@@ -10,9 +10,12 @@ function assertValidObjectId(id: string): void {
   }
 }
 
-async function generateProductSku(modelLabel: string): Promise<string> {
-  const pm = await ProductModelDoc.findOne({ label: modelLabel });
-  const prefix = pm?.sku_prefix ?? "PR";
+async function generateProductSku(modelLabel?: string): Promise<string> {
+  let prefix = "PR";
+  if (modelLabel) {
+    const pm = await ProductModelDoc.findOne({ label: modelLabel });
+    prefix = pm?.sku_prefix ?? "PR";
+  }
 
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const stamp = Date.now().toString().slice(-6);
@@ -34,17 +37,20 @@ async function generateProductSku(modelLabel: string): Promise<string> {
 
 export async function createProduct(req: Request, res: Response) {
   const payload = { ...req.body } as {
+    type: "direct" | "model";
     sku?: string;
     name: string;
-    model: string;
+    model?: string;
     price: number;
   };
 
-  payload.sku = payload.sku?.trim().toUpperCase();
   payload.name = payload.name.trim().toUpperCase();
-
-  if (!payload.sku) {
-    payload.sku = await generateProductSku(payload.model);
+  if (payload.sku) {
+    payload.sku = payload.sku.trim().toUpperCase();
+  } else {
+    payload.sku = await generateProductSku(
+      payload.type === "model" ? payload.model : undefined,
+    );
   }
 
   const product = await Product.create(payload);
@@ -52,11 +58,7 @@ export async function createProduct(req: Request, res: Response) {
 }
 
 export async function listProducts(req: Request, res: Response) {
-  const {
-    q,
-    page = "1",
-    limit = "20",
-  } = req.query;
+  const { q, page = "1", limit = "20" } = req.query;
 
   const filter: Record<string, unknown> = {
     is_active: { $ne: false },

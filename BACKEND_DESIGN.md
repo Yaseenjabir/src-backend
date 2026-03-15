@@ -2,11 +2,11 @@
 
 ## 1) Goal
 Build a simple, reliable backend to manage:
-- Products
+- Products (direct price or model-based)
+- Product Models (dynamic label + auto-derived SKU prefix)
 - Customers
 - Invoices
 - Invoice Items
-- Payments (per-invoice and global)
 - Ledger Payments (customer account-level)
 - Receivables summary
 
@@ -32,12 +32,17 @@ Base path: `/api/v1`
 
 > Route protection: all business routes are admin-protected.
 
+### Product Models
+- `GET /product-models` (list all models)
+- `POST /product-models` (create; `sku_prefix` is auto-derived from label)
+- `PATCH /product-models/:id` (update label; `sku_prefix` auto-recalculated)
+- `DELETE /product-models/:id` (hard delete)
+
 ### Products
-- `GET /products/models` (returns model enum list for frontend dropdown)
 - `GET /products` (list + search + pagination)
-- `POST /products` (create)
-- `PATCH /products/:id` (update)
-- `DELETE /products/:id` (soft delete → `is_active=false`)
+- `POST /products` (create; supports `type: "direct"` or `type: "model"`)
+- `PATCH /products/:id` (update name, model, price)
+- `DELETE /products/:id` (hard delete)
 
 ### Customers
 - `GET /customers`
@@ -45,23 +50,15 @@ Base path: `/api/v1`
 - `GET /customers/:id`
 - `PATCH /customers/:id`
 - `PATCH /customers/:id/opening-balance` (one-time set of opening balance)
-- `DELETE /customers/:id` (hard delete + cascade invoices, payments, ledger payments)
+- `DELETE /customers/:id` (hard delete + cascade invoices and ledger payments)
 
 ### Invoices
 - `GET /invoices` (filter by status/customer/date)
 - `POST /invoices`
 - `GET /invoices/:id`
 - `PATCH /invoices/:id` (edit date/discount/notes/items)
-- `DELETE /invoices/:id` (hard delete + cascade payments)
+- `DELETE /invoices/:id` (hard delete)
 - `POST /invoices/:id/items` (append items without replacing)
-- `POST /invoices/:id/payments` (record invoice-scoped payment)
-- `GET /invoices/:id/payments`
-- `DELETE /invoices/payments/:paymentId` (recompute invoice totals)
-
-### Payments (Global)
-- `GET /payments` (global listing with filters)
-- `POST /payments` (create payment by invoiceId in body)
-- `DELETE /payments/:id` (delete + recompute invoice totals)
 
 ### Ledger Payments
 - `GET /ledger-payments` (global listing, filterable by customerId/method)
@@ -90,17 +87,37 @@ Base path: `/api/v1`
 }
 ```
 
-### Create Product Request
+### Create Product Request (direct type)
 ```json
 {
-  "sku": "AS-001",
-  "name": "A Series 01",
-  "model": "A_SERIES",
-  "price": 250
+  "type": "direct",
+  "name": "SWITCH SOCKET",
+  "price": 150
 }
 ```
 
-`model` enum: `A_SERIES | K_SERIES | R_SERIES | UNIQUE_SERIES`
+### Create Product Request (model type)
+```json
+{
+  "type": "model",
+  "name": "FAN",
+  "model": "A Series",
+  "price": 500
+}
+```
+
+- `sku` is optional in both cases; backend auto-generates it if omitted.
+- For `type: "model"`, the SKU prefix is looked up from the `product_models` collection by matching `label`.
+- For `type: "direct"`, the SKU prefix defaults to `"PR"`.
+
+### Create Product Model Request
+```json
+{
+  "label": "A Series"
+}
+```
+
+- `sku_prefix` is auto-derived from `label` initials (e.g. `"A Series"` → `"AS"`, `"Unique Series"` → `"US"`).
 
 ### Admin Login Request
 ```json
@@ -122,17 +139,6 @@ Base path: `/api/v1`
     "email": "admin@example.com",
     "role": "admin"
   }
-}
-```
-
-### Add Payment Request (invoice-scoped)
-```json
-{
-  "paymentDate": "2026-03-01",
-  "amount": 1000,
-  "method": "CASH",
-  "reference": "optional",
-  "notes": "optional"
 }
 ```
 
@@ -158,21 +164,21 @@ Base path: `/api/v1`
   - `400` invalid payload
   - `404` entity not found
   - `409` duplicate SKU or invoice number conflict
-  - `422` business rule failure (e.g., payment exceeds remaining balance)
+  - `422` business rule failure (e.g., ledger payment exceeds remaining balance)
 - Use whole integers for monetary values (e.g., `300`, not `300.00`).
 - Reject non-integer money values for `price`, `discount`, `unitPriceSnapshot`, and `amount`.
-- Reject product create/update if `model` is outside enum.
-- Keep enum values uppercase to avoid mismatch.
+- Product `type` must be `"direct"` or `"model"` — enforced via Zod discriminated union.
+- `type: "model"` products require `model` field; `type: "direct"` products must not include it.
+- `type` is not updatable after creation.
 
 ## 6) Indexing
-- `products.sku` unique
-- `products` compound unique index: `{ name: 1, model: 1 }`
-- `customers.phone`
-- `invoices.invoice_no` unique
-- `invoices` compound index: `{ customer_id: 1, status: 1 }`
-- `invoices.invoice_date: -1`
-- `payments` compound index: `{ invoice_id: 1, payment_date: -1 }`
-- `ledger_payments` compound index: `{ customer_id: 1, payment_date: -1 }`
+- `products`: `{ sku: 1 }` unique
+- `products`: `{ name: 1, model: 1 }` compound unique
+- `customers`: `{ phone: 1 }`
+- `invoices`: `{ invoice_no: 1 }` unique
+- `invoices`: `{ customer_id: 1, status: 1 }` compound
+- `invoices`: `{ invoice_date: -1 }`
+- `ledger_payments`: `{ customer_id: 1, payment_date: -1 }` compound
 
 ## 7) Security (minimal v1)
 - Custom JWT auth with single role: `admin`.
@@ -197,15 +203,12 @@ backend/
     config/
       db.ts
       bootstrapAdmin.ts
-    constants/
-      productCategories.ts   ← exports PRODUCT_MODELS, ProductModel, MODEL_LABELS
-      invoiceStatus.ts       ← exports INVOICE_STATUS, InvoiceStatus
     controllers/
       auth.controller.ts
       product.controller.ts
+      productModel.controller.ts
       customer.controller.ts
       invoice.controller.ts
-      payment.controller.ts
       ledgerPayment.controller.ts
       summary.controller.ts
     middlewares/
@@ -215,17 +218,17 @@ backend/
     models/
       User.ts
       Product.ts
+      ProductModel.ts
       Customer.ts
       Invoice.ts
-      Payment.ts
       LedgerPayment.ts
     routes/
       auth.routes.ts
       health.routes.ts
       product.routes.ts
+      productModel.routes.ts
       customer.routes.ts
       invoice.routes.ts
-      payment.routes.ts
       ledgerPayment.routes.ts
       summary.routes.ts
     scripts/
@@ -233,9 +236,9 @@ backend/
     validators/
       auth.validator.ts
       product.validator.ts
+      productModel.validator.ts
       customer.validator.ts
       invoice.validator.ts
-      payment.validator.ts
       ledgerPayment.validator.ts
     utils/
       AppError.ts
@@ -247,7 +250,8 @@ backend/
 2. ✅ Auth: admin login, protected routes, bootstrap admin
 3. ✅ Products + Customers CRUD
 4. ✅ Invoice create/read/update/delete (with item snapshots, box_qty per item)
-5. ✅ Payments: add, list, delete with auto-recalculate (invoice-scoped + global)
-6. ✅ Ledger Payments: customer account-level payments with balance validation
-7. ✅ Summary/dashboard endpoint
-8. ✅ API docs
+5. ✅ Ledger Payments: customer account-level payments with balance validation
+6. ✅ Summary/dashboard endpoint
+7. ✅ Product Models: dynamic CRUD with auto-derived SKU prefix
+8. ✅ Two product types: direct (name + price) and model-based (name + model + price)
+9. ✅ API docs

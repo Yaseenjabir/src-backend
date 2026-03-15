@@ -8,13 +8,21 @@ export const productIdParamsSchema = z.object({
   id: objectIdSchema,
 });
 
-export const createProductBodySchema = z.object({
-  sku: z.string().trim().min(1).optional(),
-  name: z.string().trim().min(2),
-  model: z.string().trim().min(1),
-  price: z.number().int().nonnegative(),
-  is_active: z.boolean().optional(),
-});
+export const createProductBodySchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("direct"),
+    sku: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(2),
+    price: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("model"),
+    sku: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(2),
+    model: z.string().trim().min(1),
+    price: z.number().int().nonnegative(),
+  }),
+]);
 
 export const updateProductBodySchema = z
   .object({

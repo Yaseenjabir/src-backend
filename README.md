@@ -35,8 +35,13 @@ Production backend URL:
 - `POST /api/v1/auth/login`
 - `GET /api/v1/auth/me`
 
+### Product Models
+- `GET /api/v1/product-models`
+- `POST /api/v1/product-models`
+- `PATCH /api/v1/product-models/:id`
+- `DELETE /api/v1/product-models/:id`
+
 ### Products
-- `GET /api/v1/products/models`
 - `GET /api/v1/products`
 - `POST /api/v1/products`
 - `PATCH /api/v1/products/:id`
@@ -57,14 +62,6 @@ Production backend URL:
 - `PATCH /api/v1/invoices/:id`
 - `DELETE /api/v1/invoices/:id`
 - `POST /api/v1/invoices/:id/items`
-- `POST /api/v1/invoices/:id/payments`
-- `GET /api/v1/invoices/:id/payments`
-- `DELETE /api/v1/invoices/payments/:paymentId`
-
-### Payments (Global)
-- `GET /api/v1/payments`
-- `POST /api/v1/payments`
-- `DELETE /api/v1/payments/:id`
 
 ### Ledger Payments
 - `GET /api/v1/ledger-payments`
@@ -81,6 +78,7 @@ Detailed request/response guide:
 ## Notes
 
 - Money fields are integer-only (for example: `300`, not `300.00`).
-- Product `model` uses enum values from `src/constants/productCategories.ts`: `A_SERIES | K_SERIES | R_SERIES | UNIQUE_SERIES`.
+- Products have two types: `"direct"` (name + price only) and `"model"` (name + model label + price).
+- Product models are stored dynamically in the `product_models` collection — no static enum.
 - All business routes are admin-protected via `Authorization: Bearer <token>`.
-- Product delete is a soft delete (`is_active = false`); customer delete is a hard cascade delete.
+- Product delete is a hard delete; customer delete is a hard cascade delete.
