@@ -193,7 +193,7 @@ export async function createInvoice(req: Request, res: Response) {
     throw new AppError(404, "NOT_FOUND", "Customer not found");
   }
 
-  const parsedDate = parseDate(invoiceDate, "invoiceDate");
+  const parsedDate = invoiceDate ? parseDate(invoiceDate, "invoiceDate") : new Date();
 
   const discount = assertInteger(discountInput, "discount");
   if (discount < 0) {

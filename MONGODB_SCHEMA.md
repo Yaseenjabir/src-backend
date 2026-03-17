@@ -78,7 +78,7 @@ Direct product example (no `model` field):
 ```
 
 - `opening_balance`: integer ≥ 0, default `0`. Represents pre-existing debt carried into the system.
-- `opening_balance_set`: boolean, default `false`. Becomes `true` after `PATCH /customers/:id/opening-balance` is called — the endpoint is blocked once set.
+- `opening_balance_set`: boolean, default `false`. Becomes `true` after `PATCH /customers/:id/opening-balance` is called. Can be updated again at any time.
 
 ---
 

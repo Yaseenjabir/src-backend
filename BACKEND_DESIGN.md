@@ -49,7 +49,7 @@ Base path: `/api/v1`
 - `POST /customers`
 - `GET /customers/:id`
 - `PATCH /customers/:id`
-- `PATCH /customers/:id/opening-balance` (one-time set of opening balance)
+- `PATCH /customers/:id/opening-balance` (set or update opening balance)
 - `DELETE /customers/:id` (hard delete + cascade invoices and ledger payments)
 
 ### Invoices

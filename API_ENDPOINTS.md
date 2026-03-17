@@ -340,8 +340,8 @@ Two shapes depending on `type`:
 }
 ```
 
-- Sets the customer's `opening_balance` (integer ≥ 0).
-- One-time operation — request is rejected if `opening_balance_set` is already `true`.
+- Sets or updates the customer's `opening_balance` (integer ≥ 0).
+- Can be called multiple times — always overwrites the previous value.
 - Expected response: updated customer object with `opening_balance_set: true`.
 
 ### DELETE `/customers/:id`
@@ -423,7 +423,8 @@ Two shapes depending on `type`:
 }
 ```
 
-- Required: `customerId`, `invoiceDate`, `items` (non-empty array)
+- Required: `customerId`, `items` (non-empty array)
+- `invoiceDate` optional — defaults to today's date if not provided
 - Each item requires `productId` and `quantity` (integer > 0)
 - `unitPriceSnapshot` optional — defaults to product's current price if omitted
 - `boxQty` optional — stored per line item, does not affect pricing

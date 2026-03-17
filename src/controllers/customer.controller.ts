@@ -110,14 +110,6 @@ export async function setOpeningBalance(req: Request, res: Response) {
     throw new AppError(404, "NOT_FOUND", "Customer not found");
   }
 
-  if (customer.opening_balance_set) {
-    throw new AppError(
-      422,
-      "UNPROCESSABLE_ENTITY",
-      "Opening balance has already been set for this customer",
-    );
-  }
-
   const { amount } = req.body as { amount: number };
 
   customer.opening_balance = amount;
