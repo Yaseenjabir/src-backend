@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import Invoice from "../models/Invoice.js";
 import LedgerPayment from "../models/LedgerPayment.js";
+import Customer from "../models/Customer.js";
 import { AppError } from "../utils/AppError.js";
 
 function parseOptionalDate(
@@ -34,6 +35,80 @@ function endOfDay(date: Date): Date {
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+}
+
+export async function getLedgerSummary(_req: Request, res: Response) {
+  const result = await Customer.aggregate([
+    {
+      $lookup: {
+        from: "invoices",
+        let: { customerId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$customer_id", "$$customerId"] } } },
+          { $group: { _id: null, total: { $sum: "$total_amount" } } },
+        ],
+        as: "invoice_agg",
+      },
+    },
+    {
+      $lookup: {
+        from: "ledgerpayments",
+        let: { customerId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$customer_id", "$$customerId"] } } },
+          { $group: { _id: null, total: { $sum: "$amount" } } },
+        ],
+        as: "payment_agg",
+      },
+    },
+    {
+      $addFields: {
+        total_invoiced: {
+          $ifNull: [{ $arrayElemAt: ["$invoice_agg.total", 0] }, 0],
+        },
+        total_paid: {
+          $ifNull: [{ $arrayElemAt: ["$payment_agg.total", 0] }, 0],
+        },
+      },
+    },
+    {
+      $addFields: {
+        outstanding: { $add: ["$opening_balance", "$total_invoiced"] },
+      },
+    },
+    {
+      $addFields: {
+        remaining: {
+          $max: [0, { $subtract: ["$outstanding", "$total_paid"] }],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total_receivable: { $sum: "$remaining" },
+        total_paid: { $sum: "$total_paid" },
+        total_outstanding: { $sum: "$outstanding" },
+        customers_with_balance: {
+          $sum: { $cond: [{ $gt: ["$remaining", 0] }, 1, 0] },
+        },
+      },
+    },
+  ]);
+
+  const summary = result[0] ?? {
+    total_receivable: 0,
+    total_paid: 0,
+    total_outstanding: 0,
+    customers_with_balance: 0,
+  };
+
+  return res.json({
+    total_receivable: summary.total_receivable,
+    total_paid: summary.total_paid,
+    total_outstanding: summary.total_outstanding,
+    customers_with_balance: summary.customers_with_balance,
+  });
 }
 
 export async function getDashboardSummary(req: Request, res: Response) {
