@@ -37,6 +37,58 @@ function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
 }
 
+export async function getOutstandingCustomers(_req: Request, res: Response) {
+  const rows = await Customer.aggregate([
+    {
+      $lookup: {
+        from: "invoices",
+        let: { customerId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$customer_id", "$$customerId"] } } },
+          { $group: { _id: null, total: { $sum: "$total_amount" } } },
+        ],
+        as: "invoice_agg",
+      },
+    },
+    {
+      $lookup: {
+        from: "ledgerpayments",
+        let: { customerId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$customer_id", "$$customerId"] } } },
+          { $group: { _id: null, total: { $sum: "$amount" } } },
+        ],
+        as: "payment_agg",
+      },
+    },
+    {
+      $addFields: {
+        total_invoiced: { $ifNull: [{ $arrayElemAt: ["$invoice_agg.total", 0] }, 0] },
+        total_paid: { $ifNull: [{ $arrayElemAt: ["$payment_agg.total", 0] }, 0] },
+      },
+    },
+    {
+      $addFields: {
+        remaining: {
+          $max: [0, { $subtract: [{ $add: ["$opening_balance", "$total_invoiced"] }, "$total_paid"] }],
+        },
+      },
+    },
+    { $match: { remaining: { $gt: 0 } } },
+    { $sort: { remaining: -1 } },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        shop_name: 1,
+        remaining: 1,
+      },
+    },
+  ]);
+
+  return res.json({ customers: rows });
+}
+
 export async function getLedgerSummary(_req: Request, res: Response) {
   const result = await Customer.aggregate([
     {
