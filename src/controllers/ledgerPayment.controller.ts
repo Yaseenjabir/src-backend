@@ -12,6 +12,9 @@ export async function listLedgerPayments(req: Request, res: Response) {
 
   if (typeof customerId === "string" && customerId.trim()) {
     filter.customer_id = new mongoose.Types.ObjectId(customerId);
+  } else {
+    const activeIds = await Customer.find({ is_active: { $ne: false } }, "_id").lean();
+    filter.customer_id = { $in: activeIds.map((c) => c._id) };
   }
   if (typeof method === "string" && ["CASH", "BANK", "OTHER"].includes(method)) {
     filter.method = method;

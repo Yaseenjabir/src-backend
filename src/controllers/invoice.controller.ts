@@ -252,6 +252,9 @@ export async function listInvoices(req: Request, res: Response) {
   if (typeof customerId === "string" && customerId) {
     assertValidObjectId(customerId, "customerId");
     filter.customer_id = customerId;
+  } else {
+    const activeIds = await Customer.find({ is_active: { $ne: false } }, "_id").lean();
+    filter.customer_id = { $in: activeIds.map((c) => c._id) };
   }
 
   if (typeof fromDate === "string" || typeof toDate === "string") {
