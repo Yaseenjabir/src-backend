@@ -10,10 +10,10 @@ function assertValidObjectId(id: string): void {
   }
 }
 
-async function generateProductSku(modelLabel?: string): Promise<string> {
+async function generateProductSku(modelId?: string): Promise<string> {
   let prefix = "PR";
-  if (modelLabel) {
-    const pm = await ProductModelDoc.findOne({ label: modelLabel });
+  if (modelId) {
+    const pm = await ProductModelDoc.findById(modelId);
     prefix = pm?.sku_prefix ?? "PR";
   }
 
@@ -51,6 +51,7 @@ export async function createProduct(req: Request, res: Response) {
     payload.sku = await generateProductSku(
       payload.type === "model" ? payload.model : undefined,
     );
+
   }
 
   const product = await Product.create(payload);
@@ -76,7 +77,8 @@ export async function listProducts(req: Request, res: Response) {
 
   const [items, total] = await Promise.all([
     Product.find(filter)
-      .sort({ name: 1, model: 1 })
+      .populate("model", "label sku_prefix")
+      .sort({ name: 1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum),
     Product.countDocuments(filter),
@@ -109,7 +111,7 @@ export async function updateProduct(req: Request, res: Response) {
   const product = await Product.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
-  });
+  }).populate("model", "label sku_prefix");
 
   if (!product) {
     throw new AppError(404, "NOT_FOUND", "Product not found");

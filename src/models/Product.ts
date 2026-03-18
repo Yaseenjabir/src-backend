@@ -21,7 +21,8 @@ const productSchema = new mongoose.Schema(
       default: "model",
     },
     model: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProductModel",
       required: false,
     },
     price: {
