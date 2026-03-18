@@ -290,13 +290,13 @@ export async function getDashboardSummary(req: Request, res: Response) {
         },
       },
     ]),
-    Invoice.find({})
-      .populate("customer_id", "name shop_name phone")
-      .sort({ invoice_date: -1, created_at: -1 })
-      .limit(5)
-      .select(
-        "invoice_no customer_id invoice_date total_amount remaining_amount status",
-      ),
+    Customer.find({ is_active: { $ne: false } }, "_id").lean().then((activeCustomers) =>
+      Invoice.find({ customer_id: { $in: activeCustomers.map((c) => c._id) } })
+        .populate("customer_id", "name shop_name phone")
+        .sort({ invoice_date: -1, created_at: -1 })
+        .limit(5)
+        .select("invoice_no customer_id invoice_date total_amount remaining_amount status")
+    ),
   ]);
 
   const open = openSummary[0] ?? { receivable: 0, partial_count: 0 };
