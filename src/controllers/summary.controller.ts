@@ -39,6 +39,7 @@ function startOfMonth(date: Date): Date {
 
 export async function getOutstandingCustomers(_req: Request, res: Response) {
   const rows = await Customer.aggregate([
+    { $match: { is_active: { $ne: false } } },
     {
       $lookup: {
         from: "invoices",
@@ -91,6 +92,7 @@ export async function getOutstandingCustomers(_req: Request, res: Response) {
 
 export async function getLedgerSummary(_req: Request, res: Response) {
   const result = await Customer.aggregate([
+    { $match: { is_active: { $ne: false } } },
     {
       $lookup: {
         from: "invoices",
@@ -183,6 +185,13 @@ export async function getDashboardSummary(req: Request, res: Response) {
   const overdueCutoff = startOfDay(now);
   overdueCutoff.setDate(overdueCutoff.getDate() - overdueDaysNum);
 
+  const activeCustomerIds = await Customer.find(
+    { is_active: { $ne: false } },
+    "_id",
+  )
+    .lean()
+    .then((rows) => rows.map((r) => r._id));
+
   const [
     openSummary,
     collectedSummary,
@@ -212,6 +221,7 @@ export async function getDashboardSummary(req: Request, res: Response) {
     LedgerPayment.aggregate([
       {
         $match: {
+          customer_id: { $in: activeCustomerIds },
           payment_date: {
             $gte: parsedFrom,
             $lte: parsedTo,
@@ -290,13 +300,11 @@ export async function getDashboardSummary(req: Request, res: Response) {
         },
       },
     ]),
-    Customer.find({ is_active: { $ne: false } }, "_id").lean().then((activeCustomers) =>
-      Invoice.find({ customer_id: { $in: activeCustomers.map((c) => c._id) } })
-        .populate("customer_id", "name shop_name phone")
-        .sort({ invoice_date: -1, created_at: -1 })
-        .limit(5)
-        .select("invoice_no customer_id invoice_date total_amount remaining_amount status")
-    ),
+    Invoice.find({ customer_id: { $in: activeCustomerIds } })
+      .populate("customer_id", "name shop_name phone")
+      .sort({ invoice_date: -1, created_at: -1 })
+      .limit(5)
+      .select("invoice_no customer_id invoice_date total_amount remaining_amount status"),
   ]);
 
   const open = openSummary[0] ?? { receivable: 0, partial_count: 0 };
