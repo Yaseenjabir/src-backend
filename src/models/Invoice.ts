@@ -22,6 +22,10 @@ const invoiceItemSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    type_snapshot: {
+      type: String,
+      enum: ["direct", "model"],
+    },
     unit_price_snapshot: {
       type: Number,
       required: true,

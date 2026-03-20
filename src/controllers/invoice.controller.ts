@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Customer from "../models/Customer.js";
 import Invoice from "../models/Invoice.js";
 import Product from "../models/Product.js";
+import ProductModel from "../models/ProductModel.js";
 import {
   INVOICE_STATUS,
   type InvoiceStatus,
@@ -95,7 +96,7 @@ async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
   const products = await Product.find({
     _id: { $in: productIds },
     is_active: { $ne: false },
-  });
+  }).populate("model", "label");
 
   const productMap = new Map(
     products.map((product) => [product._id.toString(), product]),
@@ -154,7 +155,8 @@ async function buildInvoiceItems(itemsInput: InvoiceItemInput[]) {
       product_id: product._id,
       product_name_snapshot: product.name,
       sku_snapshot: product.sku,
-      model_snapshot: product.model,
+      model_snapshot: (product.model as any)?.label ?? null,
+      type_snapshot: product.type,
       unit_price_snapshot: unitPrice,
       quantity,
       line_total: lineTotal,
@@ -308,7 +310,29 @@ export async function getInvoiceById(req: Request, res: Response) {
     throw new AppError(404, "NOT_FOUND", "Invoice not found");
   }
 
-  return res.json(invoice);
+  // Resolve any model_snapshot values that are still raw ObjectIds (pre-fix invoices)
+  const invoiceObj = invoice.toObject() as any;
+  const objectIdRe = /^[0-9a-f]{24}$/i;
+  const unresolvedIds = invoiceObj.items
+    .map((item: any) => item.model_snapshot)
+    .filter((s: any) => typeof s === "string" && objectIdRe.test(s));
+
+  if (unresolvedIds.length > 0) {
+    const models = await ProductModel.find(
+      { _id: { $in: unresolvedIds } },
+      "label",
+    ).lean();
+    const labelMap = new Map(models.map((m: any) => [m._id.toString(), m.label]));
+    invoiceObj.items = invoiceObj.items.map((item: any) => ({
+      ...item,
+      model_snapshot:
+        typeof item.model_snapshot === "string" && objectIdRe.test(item.model_snapshot)
+          ? (labelMap.get(item.model_snapshot) ?? item.model_snapshot)
+          : item.model_snapshot,
+    }));
+  }
+
+  return res.json(invoiceObj);
 }
 
 export async function updateInvoice(req: Request, res: Response) {
