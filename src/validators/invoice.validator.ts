@@ -25,6 +25,7 @@ export const createInvoiceBodySchema = z.object({
   invoiceDate: dateStringSchema,
   discount: z.number().int().nonnegative().optional(),
   notes: z.string().trim().optional(),
+  invoiceType: z.enum(["model", "direct"]).optional(),
   items: z.array(invoiceItemSchema).min(1),
 });
 

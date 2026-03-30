@@ -86,6 +86,11 @@ const invoiceSchema = new mongoose.Schema(
       default: "unpaid",
     },
     notes: { type: String, trim: true },
+    invoice_type: {
+      type: String,
+      enum: ["model", "direct"],
+      default: "model",
+    },
     items: [invoiceItemSchema],
   },
   {

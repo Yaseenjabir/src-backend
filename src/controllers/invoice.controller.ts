@@ -177,12 +177,14 @@ export async function createInvoice(req: Request, res: Response) {
     discount: discountInput = 0,
     notes,
     items,
+    invoiceType = "model",
   } = req.body as {
     customerId?: string;
     invoiceDate?: string;
     discount?: number;
     notes?: string;
     items?: InvoiceItemInput[];
+    invoiceType?: "model" | "direct";
   };
 
   if (!customerId) {
@@ -197,9 +199,17 @@ export async function createInvoice(req: Request, res: Response) {
 
   const parsedDate = invoiceDate ? parseDate(invoiceDate, "invoiceDate") : new Date();
 
+  if (invoiceType !== "model" && invoiceType !== "direct") {
+    throw new AppError(400, "BAD_REQUEST", "invoiceType must be 'model' or 'direct'");
+  }
+
   const discount = assertInteger(discountInput, "discount");
   if (discount < 0) {
     throw new AppError(422, "UNPROCESSABLE_ENTITY", "discount must be >= 0");
+  }
+
+  if (invoiceType === "direct" && discount > 0) {
+    throw new AppError(422, "UNPROCESSABLE_ENTITY", "Direct invoices cannot have a discount");
   }
 
   const { items: snapshotItems, subtotal } = await buildInvoiceItems(
@@ -226,6 +236,7 @@ export async function createInvoice(req: Request, res: Response) {
     remaining_amount: totalAmount,
     status: "unpaid",
     notes,
+    invoice_type: invoiceType,
     items: snapshotItems,
   });
 
